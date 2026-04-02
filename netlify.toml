@@ -1,0 +1,15 @@
+[build]
+  # The directory where Netlify will run the build command
+  base = "frontend"
+  
+  # The frontend build command
+  command = "npm run build"
+  
+  # The directory where the built assets will be (Vite outputs to 'dist')
+  publish = "dist"
+
+# This redirects all traffic to index.html so React Router works properly!
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
