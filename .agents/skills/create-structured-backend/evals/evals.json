@@ -1,0 +1,17 @@
+{
+  "skill_name": "create-structured-backend",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a new backend for an e-commerce platform. It should have users, products, and orders.",
+      "expected_output": "A complete Django project structure with Docker config, and an apps/ directory containing users, products, and orders apps with basic models, views, and serializers.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Scaffold a booking system backend. Include apps for reservations, inventory, and billing.",
+      "expected_output": "A scaffolded project respecting the modular apps/, custom requirements layout, and Postgres 17 docker setup.",
+      "files": []
+    }
+  ]
+}
