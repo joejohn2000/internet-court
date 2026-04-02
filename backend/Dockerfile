@@ -24,4 +24,4 @@ COPY . .
 # 6. Entrypoint configuration
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-CMD ["/entrypoint.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]
