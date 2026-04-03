@@ -29,7 +29,7 @@ const slideUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 },
    ROOT APP
    ═══════════════════════════════════════════════════════════ */
 const App = () => {
-  const [page, setPage] = useState('landing'); 
+  const [page, setPage] = useState('landing');
   const [user, setUser] = useState(getStoredUser);
   const [toast, setToast] = useState(null);
 
@@ -92,7 +92,7 @@ const App = () => {
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
             className="toast glass"
-            style={{ 
+            style={{
               position: 'fixed', bottom: '40px', left: '50%', zIndex: 9999,
               padding: '16px 32px', borderRadius: '12px', borderLeft: `4px solid ${toast.type === 'success' ? '#10b981' : '#f43f5e'}`,
               display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, minWidth: '320px'
@@ -121,17 +121,17 @@ const Landing = ({ onGoLogin, onGoAdmin }) => (
       animate={{ scale: 1, opacity: 1 }}
       transition={{ ...spring, delay: 0.1 }}
       className="hero-icon-glow"
-      style={{ 
-        width: '120px', height: '120px', borderRadius: '40px', 
-        background: 'var(--grad-linear)', display: 'flex', 
-        alignItems: 'center', justifyContent: 'center', 
+      style={{
+        width: '120px', height: '120px', borderRadius: '40px',
+        background: 'var(--grad-linear)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
         marginBottom: '40px', boxShadow: '0 0 60px var(--accent-glow)'
       }}
     >
       <Gavel size={56} color="white" />
     </motion.div>
 
-    <motion.h1 
+    <motion.h1
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.2 }}
@@ -270,7 +270,7 @@ const RegisterPage = ({ onRegister, onGoLogin, ...props }) => (
     {(form, setForm) => (
       <div className="field-group">
         <label htmlFor="reg-email">Email (to verify status)</label>
-        <input id="reg-email" className="form-input" type="email" placeholder="juror@example.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+        <input id="reg-email" className="form-input" type="email" placeholder="juror@example.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
       </div>
     )}
   </AuthPageBase>
@@ -412,20 +412,20 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                 <form onSubmit={handleCreateAdmin}>
                   <div className="field-group">
                     <label>Agent Username</label>
-                    <input id="new-admin-user" className="form-input" value={newAdmin.new_username} onChange={e => setNewAdmin(n => ({...n, new_username: e.target.value}))} required />
+                    <input id="new-admin-user" className="form-input" value={newAdmin.new_username} onChange={e => setNewAdmin(n => ({ ...n, new_username: e.target.value }))} required />
                   </div>
                   <div className="field-group">
                     <label>Agent Email</label>
-                    <input id="new-admin-email" className="form-input" type="email" value={newAdmin.new_email} onChange={e => setNewAdmin(n => ({...n, new_email: e.target.value}))} />
+                    <input id="new-admin-email" className="form-input" type="email" value={newAdmin.new_email} onChange={e => setNewAdmin(n => ({ ...n, new_email: e.target.value }))} />
                   </div>
                   <div className="field-group">
                     <label>Initial Access Key</label>
-                    <input id="new-admin-pw" className="form-input" type="password" value={newAdmin.new_password} onChange={e => setNewAdmin(n => ({...n, new_password: e.target.value}))} required />
+                    <input id="new-admin-pw" className="form-input" type="password" value={newAdmin.new_password} onChange={e => setNewAdmin(n => ({ ...n, new_password: e.target.value }))} required />
                   </div>
                   <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '32px 0' }} />
                   <div className="field-group">
                     <label>Confirm Your Authorization Key</label>
-                    <input id="auth-admin-pw" className="form-input" type="password" value={newAdmin.admin_password} onChange={e => setNewAdmin(n => ({...n, admin_password: e.target.value}))} required />
+                    <input id="auth-admin-pw" className="form-input" type="password" value={newAdmin.admin_password} onChange={e => setNewAdmin(n => ({ ...n, admin_password: e.target.value }))} required />
                   </div>
                   <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
                     {creating ? 'Processing...' : 'Authorize Personnel'}
@@ -450,7 +450,7 @@ const HomePage = ({ user, onLogout, showToast }) => {
   const [modalType, setModalType] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchContent = useCallback(async () => {
+  const fetchContent = useCallback(async (syncSelection = false) => {
     try {
       const [cs, ct] = await Promise.all([
         axios.get(`${API}/cases/`),
@@ -460,16 +460,20 @@ const HomePage = ({ user, onLogout, showToast }) => {
       setCases(newCases);
       setCats(Array.isArray(ct.data) ? ct.data : ct.data.results || []);
 
-      // Critical: Update selectedCase state if one is already open to reflect new votes
-      if (selectedCase) {
-        const updated = newCases.find(c => c.id === selectedCase.id);
-        if (updated) setSelectedCase(updated);
+      // Selection sync is only done when explicitly requested (e.g. after a vote)
+      if (syncSelection) {
+        setSelectedCase(prev => {
+          if (!prev) return null;
+          return newCases.find(c => c.id === prev.id) || prev;
+        });
       }
     } catch (err) { console.error(err); }
     setLoading(false);
-  }, [selectedCase]);
+  }, []);
 
-  useEffect(() => { fetchContent(); }, [fetchContent]);
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
 
   return (
     <div className="layout-container">
@@ -531,7 +535,7 @@ const HomePage = ({ user, onLogout, showToast }) => {
                 <button onClick={() => setSelectedCase(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)' }}>
                   <X size={24} />
                 </button>
-                <CaseDetail item={selectedCase} showToast={showToast} onRefresh={fetchContent} />
+                <CaseDetail item={selectedCase} showToast={showToast} onRefresh={() => { fetchContent(true); }} />
               </motion.section>
             )}
           </AnimatePresence>
@@ -657,19 +661,19 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
             {voted ? 'LIVE ADJUDICATION STATS' : 'INITIAL VERDICT RATIO (VOTE TO UNLOCK)'}
           </p>
           <div className="vote-bar-track" style={{ height: '12px' }}>
-            <div className="vote-bar-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_guilty/total)*100)}%` : '50%' }} />
-            <div className="vote-bar-esh" style={{ width: voted && total > 0 ? `${Math.round((item.votes_esh/total)*100)}%` : '0%' }} />
-            <div className="vote-bar-not-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_not_guilty/total)*100)}%` : '50%' }} />
+            <div className="vote-bar-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '50%' }} />
+            <div className="vote-bar-esh" style={{ width: voted && total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%' }} />
+            <div className="vote-bar-not-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '50%' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
             <span style={{ color: 'var(--danger)', fontWeight: 700 }}>
-              {voted && total > 0 ? `${Math.round((item.votes_guilty/total)*100)}%` : '50%'} Guilty
+              {voted && total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '50%'} Guilty
             </span>
             {voted && <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
-              {total > 0 ? `${Math.round((item.votes_esh/total)*100)}%` : '0%'} ESH
+              {total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%'} ESH
             </span>}
             <span style={{ color: 'var(--success)', fontWeight: 700 }}>
-              {voted && total > 0 ? `${Math.round((item.votes_not_guilty/total)*100)}%` : '50%'} Not Guilty
+              {voted && total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '50%'} Not Guilty
             </span>
           </div>
         </div>
@@ -729,17 +733,17 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
                 </label>
                 <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Submit as Anonymous</span>
               </div>
-              
+
               {!anon && (
                 <div className="field-group">
                   <label>Display Name</label>
-                  <input id="case-author" className="form-input" placeholder={user?.username} value={form.author_name} onChange={e => setForm({...form, author_name: e.target.value})} />
+                  <input id="case-author" className="form-input" placeholder={user?.username} value={form.author_name} onChange={e => setForm({ ...form, author_name: e.target.value })} />
                 </div>
               )}
 
               <div className="field-group">
                 <label>Category</label>
-                <select id="case-cat" className="form-input" value={form.category} onChange={e => setForm({...form, category: e.target.value})} required>
+                <select id="case-cat" className="form-input" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required>
                   <option value="">Select Domain...</option>
                   {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
@@ -747,19 +751,19 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
 
               <div className="field-group">
                 <label>Attention Hook</label>
-                <input id="case-hook" className="form-input" placeholder="e.g. AITA for refusing to pay for my friend's dinner?" value={form.hook} onChange={e => setForm({...form, hook: e.target.value})} required />
+                <input id="case-hook" className="form-input" placeholder="e.g. AITA for refusing to pay for my friend's dinner?" value={form.hook} onChange={e => setForm({ ...form, hook: e.target.value })} required />
               </div>
 
               <div className="field-group">
                 <label>The Full Story</label>
-                <textarea id="case-story" className="form-input" rows={6} placeholder="Provide all context and testimony..." value={form.story} onChange={e => setForm({...form, story: e.target.value})} required />
+                <textarea id="case-story" className="form-input" rows={6} placeholder="Provide all context and testimony..." value={form.story} onChange={e => setForm({ ...form, story: e.target.value })} required />
               </div>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '20px' }}>
-               <div className="field-group">
+              <div className="field-group">
                 <label>Feedback Category</label>
-                <select id="fb-type" className="form-input" value={form.feedback_type} onChange={e => setForm({...form, feedback_type: e.target.value})} required>
+                <select id="fb-type" className="form-input" value={form.feedback_type} onChange={e => setForm({ ...form, feedback_type: e.target.value })} required>
                   <option value="bug">Report Malfunction</option>
                   <option value="feature">Enhancement Request</option>
                   <option value="other">General Protocol</option>
@@ -767,11 +771,11 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
               </div>
               <div className="field-group">
                 <label>Communication</label>
-                <textarea id="fb-msg" className="form-input" rows={5} placeholder="Your message to the developers..." value={form.message} onChange={e => setForm({...form, message: e.target.value})} required />
+                <textarea id="fb-msg" className="form-input" rows={5} placeholder="Your message to the developers..." value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required />
               </div>
               <div className="field-group">
                 <label>Contact Endpoint (Optional)</label>
-                <input id="fb-email" className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                <input id="fb-email" className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
               </div>
             </div>
           )}
