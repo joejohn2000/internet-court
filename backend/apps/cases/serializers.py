@@ -20,6 +20,7 @@ class CaseSerializer(serializers.ModelSerializer):
     votes_not_guilty = serializers.SerializerMethodField()
     votes_esh = serializers.SerializerMethodField()
     total_votes = serializers.SerializerMethodField()
+    user_has_voted = serializers.SerializerMethodField()
 
     class Meta:
         model = Case
@@ -27,7 +28,8 @@ class CaseSerializer(serializers.ModelSerializer):
             'id', 'author_name', 'category', 'category_id',
             'title_hook', 'ai_suggested_hook', 'full_story',
             'status', 'verdict_timer_ends', 'created_at',
-            'votes_guilty', 'votes_not_guilty', 'votes_esh', 'total_votes',
+            'votes_guilty', 'votes_not_guilty', 'votes_esh', 
+            'total_votes', 'user_has_voted',
         ]
         read_only_fields = ['status', 'verdict_timer_ends', 'ai_suggested_hook']
 
@@ -47,3 +49,9 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def get_total_votes(self, obj):
         return obj.votes.count()
+
+    def get_user_has_voted(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            return obj.votes.filter(voter=request.user).exists()
+        return False

@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, login
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -32,6 +32,7 @@ def user_register(request):
         return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=username, password=password, email=email)
+    login(request, user)
     return Response(get_user_response(user), status=status.HTTP_201_CREATED)
 
 
@@ -49,6 +50,7 @@ def user_login(request):
     if user is None:
         return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
+    login(request, user)
     return Response(get_user_response(user))
 
 
@@ -69,6 +71,7 @@ def admin_login(request):
     if not (user.is_staff or user.is_superuser):
         return Response({'error': 'Admin access only.'}, status=status.HTTP_403_FORBIDDEN)
 
+    login(request, user)
     return Response({
         'id': user.id,
         'username': user.username,

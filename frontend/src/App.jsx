@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+axios.defaults.withCredentials = true;
 
 /* ── Storage ── */
 const getStoredUser = () => {
@@ -567,7 +568,14 @@ const CaseCard = ({ item, isActive, onClick }) => {
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.8rem', fontWeight: 800 }}>
         <span style={{ color: 'var(--text-dim)' }}>FILE #{item.id}</span>
-        <span style={{ color: 'var(--accent)', letterSpacing: '1px' }}>{item.category?.name?.toUpperCase()}</span>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {item.user_has_voted && (
+            <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={12} /> VERDICT SECURED
+            </span>
+          )}
+          <span style={{ color: 'var(--accent)', letterSpacing: '1px' }}>{item.category?.name?.toUpperCase()}</span>
+        </div>
       </header>
 
       <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '20px', lineHeight: 1.3 }}>{item.title_hook}</h3>
@@ -580,9 +588,15 @@ const CaseCard = ({ item, isActive, onClick }) => {
             <div className="vote-bar-not-guilty" style={{ width: `${fine}%` }} />
           </div>
           <div className="vote-stats-row">
-            <span className="vs guilty"><ThumbsUp size={12} /> {item.votes_guilty}</span>
-            <span className="vs esh"><MessageCircle size={12} /> {item.votes_esh}</span>
-            <span className="vs not-guilty"><ThumbsDown size={12} /> {item.votes_not_guilty}</span>
+            <span className="vs guilty">
+              <ThumbsUp size={12} /> {guilty}% ({item.votes_guilty})
+            </span>
+            <span className="vs esh">
+              <MessageCircle size={12} /> {esh}% ({item.votes_esh})
+            </span>
+            <span className="vs not-guilty">
+              <ThumbsDown size={12} /> {fine}% ({item.votes_not_guilty})
+            </span>
             <span className="vs total">· {total} verdicts</span>
           </div>
         </div>
@@ -601,17 +615,26 @@ const CaseCard = ({ item, isActive, onClick }) => {
 
 /* ── CaseDetail ── */
 const CaseDetail = ({ item, showToast, onRefresh }) => {
-  const [voted, setVoted] = useState(false);
+  const [localVoted, setLocalVoted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Sync: reset local state when switching cases (item changes)
+  useEffect(() => {
+    setLocalVoted(false);
+  }, [item.id]);
+
+  const hasActuallyVoted = localVoted || item.user_has_voted;
 
   const handleVote = async (decision) => {
     setLoading(true);
     try {
       await axios.post(`${API}/votes/`, { case: item.id, decision });
-      setVoted(true);
+      setLocalVoted(true);
       showToast('Verdict recorded in blockchain.');
       onRefresh();
-    } catch { showToast('Transmission error.', 'error'); }
+    } catch (err) { 
+      showToast(err.response?.data?.error || 'Transmission error.', 'error'); 
+    }
     setLoading(false);
   };
 
@@ -629,51 +652,52 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
       </div>
 
       <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '32px' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Gavel color="var(--accent)" /> CAST YOUR VERDICT
-        </h3>
-
-        {voted ? (
+        {hasActuallyVoted ? (
           <div className="glass-bright" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center' }}>
-            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px' }} />
-            <p style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '8px' }}>VERDICT SECURED</p>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Thank you for your service, juror.</p>
+            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>VERDICT SECURED</h3>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>Your contribution to digital justice has been logged. Thank you for your service, juror.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--danger)' }}>
-              <ThumbsUp size={32} color="var(--danger)" />
-              <span style={{ marginTop: '8px', fontWeight: 700 }}>GUILTY</span>
-            </button>
-            <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--warning)' }}>
-              <MessageCircle size={32} color="var(--warning)" />
-              <span style={{ marginTop: '8px', fontWeight: 700 }}>ESH</span>
-            </button>
-            <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--success)' }}>
-              <ThumbsDown size={32} color="var(--success)" />
-              <span style={{ marginTop: '8px', fontWeight: 700 }}>NOT GUILTY</span>
-            </button>
-          </div>
+          <>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Gavel color="var(--accent)" /> CAST YOUR VERDICT
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--danger)' }}>
+                <ThumbsUp size={32} color="var(--danger)" />
+                <span style={{ marginTop: '8px', fontWeight: 700 }}>GUILTY</span>
+              </button>
+              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--warning)' }}>
+                <MessageCircle size={32} color="var(--warning)" />
+                <span style={{ marginTop: '8px', fontWeight: 700 }}>ESH</span>
+              </button>
+              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--success)' }}>
+                <ThumbsDown size={32} color="var(--success)" />
+                <span style={{ marginTop: '8px', fontWeight: 700 }}>NOT GUILTY</span>
+              </button>
+            </div>
+          </>
         )}
 
         <div style={{ marginTop: '40px' }}>
           <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '12px' }}>
-            {voted ? 'LIVE ADJUDICATION STATS' : 'INITIAL VERDICT RATIO (VOTE TO UNLOCK)'}
+            LIVE ADJUDICATION STATS {total === 0 && '(Awaiting First Verdict)'}
           </p>
           <div className="vote-bar-track" style={{ height: '12px' }}>
-            <div className="vote-bar-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '50%' }} />
-            <div className="vote-bar-esh" style={{ width: voted && total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%' }} />
-            <div className="vote-bar-not-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '50%' }} />
+            <div className="vote-bar-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '0%' }} />
+            <div className="vote-bar-esh" style={{ width: total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%' }} />
+            <div className="vote-bar-not-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '0%' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
             <span style={{ color: 'var(--danger)', fontWeight: 700 }}>
-              {voted && total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '50%'} Guilty
+              {total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0}% Guilty ({item.votes_guilty})
             </span>
-            {voted && <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
-              {total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%'} ESH
-            </span>}
+            <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
+              {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}% ESH ({item.votes_esh})
+            </span>
             <span style={{ color: 'var(--success)', fontWeight: 700 }}>
-              {voted && total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '50%'} Not Guilty
+              {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}% Not Guilty ({item.votes_not_guilty})
             </span>
           </div>
         </div>
