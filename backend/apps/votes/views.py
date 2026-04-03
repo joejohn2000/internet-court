@@ -19,11 +19,25 @@ class VoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # For anonymous voting, use session-based or IP-based dedup
-        # For now, just create the vote
+        # Identify the voter
+        if request.user and request.user.is_authenticated:
+            voter = request.user
+        else:
+            # Fallback for anonymous: Try to find the special anonymous system user
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            voter, _ = User.objects.get_or_create(username='anonymous', defaults={'is_active': True})
+
+        # PREVENT DUPLICATE VOTES
+        if Vote.objects.filter(case_id=case_id, voter=voter).exists():
+            return Response(
+                {'error': 'You have already voiced your verdict on this case.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         vote = Vote.objects.create(
             case_id=case_id,
-            voter_id=1,  # Default to first user for anonymous votes
+            voter=voter,
             decision=decision,
         )
         serializer = self.get_serializer(vote)
