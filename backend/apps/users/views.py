@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate, login
 from rest_framework import status
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
@@ -17,6 +18,7 @@ def get_user_response(user):
     }
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_register(request):
@@ -36,6 +38,7 @@ def user_register(request):
     return Response(get_user_response(user), status=status.HTTP_201_CREATED)
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_login(request):
@@ -54,6 +57,7 @@ def user_login(request):
     return Response(get_user_response(user))
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_login(request):
@@ -133,6 +137,7 @@ def admin_stats(request):
     })
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_logout(request):
