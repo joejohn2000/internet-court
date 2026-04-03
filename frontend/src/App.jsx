@@ -371,22 +371,69 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
           {activeTab === 'overview' ? (
             <motion.div key="overview" {...fadeIn} className="admin-content">
               <div className="stats-grid">
-                {[
-                  { label: 'Citizens Hub', value: stats?.feedback_count, icon: <MessageCircle size={32} />, color: 'var(--accent)' },
-                  { label: 'Active Disputes', value: stats?.cases_count, icon: <Scale size={32} />, color: 'var(--success)' },
-                  { label: 'Verdict Count', value: stats?.votes_count, icon: <Flame size={32} />, color: 'var(--danger)' },
-                ].map(s => (
-                  <div key={s.label} className="stat-card glass">
-                    <div style={{ color: s.color }} className="stat-icon">{s.icon}</div>
-                    <div className="stat-value">{s.value ?? '0'}</div>
-                    <div className="stat-label">{s.label}</div>
-                  </div>
-                ))}
+                <div className="stat-card glass">
+                  <Scale className="stat-icon" color="var(--accent)" />
+                  <span className="stat-value">{stats?.cases_count || 0}</span>
+                  <span className="stat-label">Active Disputes</span>
+                </div>
+                <div className="stat-card glass">
+                  <Flame className="stat-icon" color="var(--danger)" />
+                  <span className="stat-value">{stats?.votes_count || 0}</span>
+                  <span className="stat-label">Verdict Count</span>
+                </div>
+                <div className="stat-card glass">
+                  <Users className="stat-icon" color="#3b82f6" />
+                  <span className="stat-value">{stats?.users_count || 0}</span>
+                  <span className="stat-label">Registered Citizens</span>
+                </div>
+                <div className="stat-card glass">
+                  <MessageCircle className="stat-icon" color="var(--warning)" />
+                  <span className="stat-value">{stats?.feedback_count || 0}</span>
+                  <span className="stat-label">Feedback Reports</span>
+                </div>
               </div>
 
-              <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+              {/* Juror Table */}
+              <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', marginTop: '32px' }}>
                 <h3 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <MessageCircle color="var(--accent)" /> Public Feedback
+                  <Shield size={24} color="var(--accent)" /> Active Juror Directory
+                </h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-dim)', fontSize: '0.8rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <th style={{ padding: '16px' }}>CID</th>
+                        <th style={{ padding: '16px' }}>CITIZEN IDENTITY</th>
+                        <th style={{ padding: '16px' }}>ENDPOINT</th>
+                        <th style={{ padding: '16px' }}>PROTOCOL ACCESS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats?.users?.map(u => (
+                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '16px', color: 'var(--text-dim)' }}>#{u.id}</td>
+                          <td style={{ padding: '16px', fontWeight: 700 }}>{u.username}</td>
+                          <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{u.email || 'N/A'}</td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ 
+                              padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', 
+                              background: u.is_admin ? 'var(--accent-muted)' : 'rgba(255,255,255,0.03)',
+                              color: u.is_admin ? 'var(--accent)' : 'var(--text-dim)',
+                              border: `1px solid ${u.is_admin ? 'var(--accent)' : 'transparent'}`
+                            }}>
+                              {u.is_admin ? 'SUPER-OPERATOR' : 'CITIZEN-JUROR'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '32px', marginTop: '32px' }}>
+                <h3 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <MessageCircle color="var(--accent)" /> Incoming Transmissions (Feedback)
                 </h3>
                 <div style={{ display: 'grid', gap: '16px' }}>
                   {feedbacks.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No incoming transmissions.</p>}

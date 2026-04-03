@@ -19,6 +19,7 @@ def get_user_response(user):
 
 
 @csrf_exempt
+@authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_register(request):
@@ -39,6 +40,7 @@ def user_register(request):
 
 
 @csrf_exempt
+@authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_login(request):
@@ -58,6 +60,7 @@ def user_login(request):
 
 
 @csrf_exempt
+@authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_login(request):
@@ -130,14 +133,19 @@ def admin_stats(request):
     feedback_count = Feedback.objects.count()
     from apps.cases.models import Case
     from apps.votes.models import Vote
+    users = [get_user_response(u) for u in User.objects.all().order_by('-date_joined')]
+    
     return Response({
         'feedback_count': feedback_count,
         'cases_count': Case.objects.count(),
         'votes_count': Vote.objects.count(),
+        'users_count': len(users),
+        'users': users
     })
 
 
 @csrf_exempt
+@authentication_classes([])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_logout(request):
