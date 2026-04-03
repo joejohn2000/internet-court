@@ -17,8 +17,8 @@ def get_user_response(user):
 
 
 @csrf_exempt
-@authentication_classes([])
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def user_register(request):
     """Register a new normal user."""
@@ -39,8 +39,8 @@ def user_register(request):
 
 
 @csrf_exempt
-@authentication_classes([])
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def user_login(request):
     """Login for normal users – returns basic user info."""
@@ -59,8 +59,8 @@ def user_login(request):
 
 
 @csrf_exempt
-@authentication_classes([])
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def admin_login(request):
     """Login for admin users only."""
@@ -144,8 +144,8 @@ def admin_stats(request):
 
 
 @csrf_exempt
-@authentication_classes([])
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def user_logout(request):
     """Terminates the session on the backend."""
