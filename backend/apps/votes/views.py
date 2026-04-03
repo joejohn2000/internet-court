@@ -7,7 +7,7 @@ from .serializers import VoteSerializer
 class VoteViewSet(viewsets.ModelViewSet):
     queryset = Vote.objects.all()
     serializer_class = VoteSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         case_id = request.data.get('case')
@@ -19,14 +19,7 @@ class VoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Identify the voter
-        if request.user and request.user.is_authenticated:
-            voter = request.user
-        else:
-            # Fallback for anonymous: Try to find the special anonymous system user
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            voter, _ = User.objects.get_or_create(username='anonymous', defaults={'is_active': True})
+        voter = request.user
 
         # PREVENT DUPLICATE VOTES
         if Vote.objects.filter(case_id=case_id, voter=voter).exists():
