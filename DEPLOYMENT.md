@@ -40,7 +40,7 @@ Render is perfect for deploying Python backend web services. It automatically ru
 6. **Deploy!**
    * Scroll down and click **Create Web Service**. 
    * Render will begin building. Because we set up WhiteNoise and `dj-database-url` in your settings, it should deploy smoothly out-of-the-box using a local SQLite database that Render provides on the instance.
-   * Note the deployed URL (e.g., `https://internet-court-backend.onrender.com`).
+   * Note the deployed URL (e.g., `https://internet-court.onrender.com`).
 
 ---
 
@@ -52,7 +52,7 @@ Vercel is the premier platform for deploying React/Node applications for free, a
 
 1. **Update Frontend API URL (if required):**
    * Before pushing to GitHub, ensure your frontend is configured to talk to your new backend. 
-   * You might have an `.env` file or an `api.js` file in your frontend where you define the `BASE_URL`. Change it to point to your new Render URL, like: `https://internet-court-backend.onrender.com/api` (Wait to complete the backend deploy to get this URL).
+   * You might have an `.env` file or an `api.js` file in your frontend where you define the `BASE_URL`. Change it to point to your new Render URL, like: `https://internet-court.onrender.com/api` (Wait to complete the backend deploy to get this URL).
    * Note: Push this specific environment variable/change config to GitHub.
 
 2. **Create a Vercel account:**

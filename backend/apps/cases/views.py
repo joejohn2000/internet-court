@@ -4,9 +4,11 @@ from rest_framework.decorators import action
 from .models import Case, Category
 from .serializers import CaseSerializer, CategorySerializer
 
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 
 class CaseViewSet(viewsets.ModelViewSet):
     queryset = Case.objects.all().order_by('-created_at')
@@ -16,13 +18,32 @@ class CaseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        user = self.request.user if self.request.user.is_authenticated else User.objects.first()
-        serializer.save(author=user)
+
+        # Support anonymous submission: use a fallback "Anonymous" system user
+        if self.request.user and self.request.user.is_authenticated:
+            author = self.request.user
+        else:
+            # Get or create an anonymous system user
+            author, _ = User.objects.get_or_create(
+                username='anonymous',
+                defaults={'email': '', 'is_active': True}
+            )
+        
+        # Override the username display if submitter provided a name
+        submitter_name = self.request.data.get('author_name', '').strip()
+        if submitter_name:
+            # Get or create a user with that display name
+            display_user, _ = User.objects.get_or_create(
+                username=submitter_name,
+                defaults={'email': '', 'is_active': True}
+            )
+            author = display_user
+
+        serializer.save(author=author)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):
         case = self.get_object()
-        # Mocking AI hook logic to be replaced by actual AI call
         case.ai_suggested_hook = f"Improved: {case.title_hook} (AI Enhanced)"
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
