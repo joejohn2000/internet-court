@@ -46,7 +46,8 @@ const App = () => {
     setPage(userData.is_admin ? 'admin' : 'home');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await axios.post(`${API}/users/logout/`); } catch (e) { console.error("Logout cleanup failed", e); }
     clearUser();
     setUser(null);
     setPage('landing');
@@ -615,25 +616,26 @@ const CaseCard = ({ item, isActive, onClick }) => {
 
 /* ── CaseDetail ── */
 const CaseDetail = ({ item, showToast, onRefresh }) => {
-  const [localVoted, setLocalVoted] = useState(false);
+  const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Sync: reset local state when switching cases (item changes)
+  // Once the backend confirms the vote, drop the optimistic flag.
+  // Also drop it whenever we switch to a different case.
   useEffect(() => {
-    setLocalVoted(false);
+    setOptimisticVoted(false);
   }, [item.id]);
 
-  const hasActuallyVoted = localVoted || item.user_has_voted;
+  const hasActuallyVoted = optimisticVoted || item.user_has_voted;
 
   const handleVote = async (decision) => {
     setLoading(true);
     try {
       await axios.post(`${API}/votes/`, { case: item.id, decision });
-      setLocalVoted(true);
+      setOptimisticVoted(true);   // ← changed from setLocalVoted(true)
       showToast('Verdict recorded in blockchain.');
       onRefresh();
-    } catch (err) { 
-      showToast(err.response?.data?.error || 'Transmission error.', 'error'); 
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Transmission error.', 'error');
     }
     setLoading(false);
   };
