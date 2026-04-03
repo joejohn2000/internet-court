@@ -98,7 +98,7 @@ button, input, select, textarea {
 .main-content {
   flex: 1;
   padding: 100px 24px 60px;
-  max-width: 1300px;
+  max-width: 1500px; /* Increased for better side-by-side */
   width: 100%;
   margin: 0 auto;
 }
@@ -237,7 +237,26 @@ button, input, select, textarea {
   font-weight: 600;
 }
 
-/* ── Case Cards ── */
+/* ── Case Cards & Feed Layout ── */
+.feed-layout {
+  display: flex;
+  flex-direction: row; /* Force side-by-side on large screens */
+  gap: 32px;
+  width: 100%;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+}
+
+.feed-list-section {
+  flex: 1;
+  min-width: 0;
+  transition: all 0.4s ease;
+}
+
+.feed-list-section.with-detail {
+  flex: 0 0 460px; /* Specific width for the list when detail is open */
+}
+
 .feed-header {
   display: flex;
   justify-content: space-between;
@@ -258,7 +277,7 @@ button, input, select, textarea {
 .case-card {
   padding: 32px;
   border-radius: var(--radius-lg);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -283,6 +302,19 @@ button, input, select, textarea {
   border-color: var(--accent);
   background: rgba(99, 102, 241, 0.08);
   box-shadow: 0 0 30px var(--accent-muted);
+}
+
+/* ── Split Detail Panel ── */
+.detail-panel {
+  flex: 1;
+  min-width: 0;
+  position: sticky;
+  top: 120px;
+  height: calc(100vh - 160px);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  overflow-y: auto;
+  z-index: 10;
 }
 
 /* ── Vote Bars ── */
@@ -539,16 +571,36 @@ input:checked + .slider:before {
 }
 
 /* ── Responsive ── */
+@media (max-width: 1200px) {
+  .feed-list-section.with-detail {
+    flex: 0 0 400px;
+  }
+}
+
 @media (max-width: 1024px) {
   .admin-sidebar { width: 80px; padding: 24px 16px; }
   .admin-sidebar-logo span, .admin-nav-item span { display: none; }
   .admin-nav-item { justify-content: center; }
+  
+  .feed-list-section.with-detail {
+    flex: 0 0 320px;
+  }
+}
+
+@media (max-width: 900px) {
+  .feed-layout { flex-direction: column; }
+  .feed-list-section.with-detail { flex: 1; width: 100%; }
+  .detail-panel { 
+    position: relative !important; 
+    top: 0 !important; 
+    height: auto !important; 
+    max-height: none !important; 
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
   .hero-title { font-size: 3.5rem; }
-  .feed-layout { flex-direction: column; }
-  .detail-panel { position: relative !important; top: 0 !important; height: auto !important; max-height: none !important; }
   .auth-card { padding: 32px; }
 }
 

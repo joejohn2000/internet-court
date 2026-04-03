@@ -456,11 +456,18 @@ const HomePage = ({ user, onLogout, showToast }) => {
         axios.get(`${API}/cases/`),
         axios.get(`${API}/categories/`)
       ]);
-      setCases(Array.isArray(cs.data) ? cs.data : cs.data.results || []);
+      const newCases = Array.isArray(cs.data) ? cs.data : cs.data.results || [];
+      setCases(newCases);
       setCats(Array.isArray(ct.data) ? ct.data : ct.data.results || []);
+
+      // Critical: Update selectedCase state if one is already open to reflect new votes
+      if (selectedCase) {
+        const updated = newCases.find(c => c.id === selectedCase.id);
+        if (updated) setSelectedCase(updated);
+      }
     } catch (err) { console.error(err); }
     setLoading(false);
-  }, []);
+  }, [selectedCase]);
 
   useEffect(() => { fetchContent(); }, [fetchContent]);
 
@@ -488,10 +495,10 @@ const HomePage = ({ user, onLogout, showToast }) => {
 
       <main className="main-content">
         <div className="feed-layout">
-          <section style={{ flex: selectedCase ? '0 0 450px' : '1', transition: 'all 0.5s ease' }}>
+          <section className={`feed-list-section ${selectedCase ? 'with-detail' : ''}`}>
             <header className="feed-header">
               <h2 className="feed-title grad-text">Public Docket</h2>
-              <span className="feed-count">{cases.length} UNRESOLVED CASEFLIES</span>
+              <span className="feed-count">{cases.length} UNRESOLVED CASEFILES</span>
             </header>
 
             <LayoutGroup>
@@ -622,7 +629,13 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
           <Gavel color="var(--accent)" /> CAST YOUR VERDICT
         </h3>
 
-        {!voted ? (
+        {voted ? (
+          <div className="glass-bright" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center' }}>
+            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px' }} />
+            <p style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '8px' }}>VERDICT SECURED</p>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Thank you for your service, juror.</p>
+          </div>
+        ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--danger)' }}>
               <ThumbsUp size={32} color="var(--danger)" />
@@ -637,29 +650,29 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
               <span style={{ marginTop: '8px', fontWeight: 700 }}>NOT GUILTY</span>
             </button>
           </div>
-        ) : (
-          <div className="glass-bright" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center' }}>
-            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px' }} />
-            <p style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '8px' }}>VERDICT SECURED</p>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Thank you for your service, juror.</p>
-          </div>
         )}
 
-        {total > 0 && (
-          <div style={{ marginTop: '40px' }}>
-             <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '12px' }}>LIVE ADJUDICATION STATS</p>
-             <div className="vote-bar-track" style={{ height: '12px' }}>
-                <div className="vote-bar-guilty" style={{ width: `${Math.round((item.votes_guilty/total)*100)}%` }} />
-                <div className="vote-bar-esh" style={{ width: `${Math.round((item.votes_esh/total)*100)}%` }} />
-                <div className="vote-bar-not-guilty" style={{ width: `${Math.round((item.votes_not_guilty/total)*100)}%` }} />
-             </div>
-             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
-                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>{Math.round((item.votes_guilty/total)*100)}% Guilty</span>
-                <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{Math.round((item.votes_esh/total)*100)}% ESH</span>
-                <span style={{ color: 'var(--success)', fontWeight: 700 }}>{Math.round((item.votes_not_guilty/total)*100)}% Not Guilty</span>
-             </div>
+        <div style={{ marginTop: '40px' }}>
+          <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '12px' }}>
+            {voted ? 'LIVE ADJUDICATION STATS' : 'INITIAL VERDICT RATIO (VOTE TO UNLOCK)'}
+          </p>
+          <div className="vote-bar-track" style={{ height: '12px' }}>
+            <div className="vote-bar-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_guilty/total)*100)}%` : '50%' }} />
+            <div className="vote-bar-esh" style={{ width: voted && total > 0 ? `${Math.round((item.votes_esh/total)*100)}%` : '0%' }} />
+            <div className="vote-bar-not-guilty" style={{ width: voted && total > 0 ? `${Math.round((item.votes_not_guilty/total)*100)}%` : '50%' }} />
           </div>
-        )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
+            <span style={{ color: 'var(--danger)', fontWeight: 700 }}>
+              {voted && total > 0 ? `${Math.round((item.votes_guilty/total)*100)}%` : '50%'} Guilty
+            </span>
+            {voted && <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
+              {total > 0 ? `${Math.round((item.votes_esh/total)*100)}%` : '0%'} ESH
+            </span>}
+            <span style={{ color: 'var(--success)', fontWeight: 700 }}>
+              {voted && total > 0 ? `${Math.round((item.votes_not_guilty/total)*100)}%` : '50%'} Not Guilty
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
