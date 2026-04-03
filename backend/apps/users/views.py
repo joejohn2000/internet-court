@@ -6,8 +6,6 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from apps.feedback.models import Feedback
 
-User = get_user_model()
-
 
 def get_user_response(user):
     return {
@@ -24,6 +22,7 @@ def get_user_response(user):
 @permission_classes([AllowAny])
 def user_register(request):
     """Register a new normal user."""
+    User = get_user_model()
     username = request.data.get('username', '').strip()
     password = request.data.get('password', '').strip()
     email = request.data.get('email', '').strip()
@@ -31,10 +30,10 @@ def user_register(request):
     if not username or not password:
         return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(username=username).exists():
+    if get_user_model().objects.filter(username=username).exists():
         return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = User.objects.create_user(username=username, password=password, email=email)
+    user = get_user_model().objects.create_user(username=username, password=password, email=email)
     login(request, user)
     return Response(get_user_response(user), status=status.HTTP_201_CREATED)
 
@@ -110,10 +109,10 @@ def create_admin(request):
     if not new_username or not new_password:
         return Response({'error': 'new_username and new_password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(username=new_username).exists():
+    if get_user_model().objects.filter(username=new_username).exists():
         return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    new_admin = User.objects.create_superuser(
+    new_admin = get_user_model().objects.create_superuser(
         username=new_username,
         password=new_password,
         email=new_email or '',
@@ -133,7 +132,7 @@ def admin_stats(request):
     feedback_count = Feedback.objects.count()
     from apps.cases.models import Case
     from apps.votes.models import Vote
-    users = [get_user_response(u) for u in User.objects.all().order_by('-date_joined')]
+    users = [get_user_response(u) for u in get_user_model().objects.all().order_by('-id')]
     
     return Response({
         'feedback_count': feedback_count,
