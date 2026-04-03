@@ -123,7 +123,6 @@ def create_admin(request):
 @permission_classes([AllowAny])
 def admin_stats(request):
     """Stats visible in the admin dashboard."""
-    # Simple credential check via query params (or rely on client-side guard)
     feedback_count = Feedback.objects.count()
     from apps.cases.models import Case
     from apps.votes.models import Vote
@@ -132,3 +131,12 @@ def admin_stats(request):
         'cases_count': Case.objects.count(),
         'votes_count': Vote.objects.count(),
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def user_logout(request):
+    """Terminates the session on the backend."""
+    from django.contrib.auth import logout
+    logout(request)
+    return Response({'status': 'Logged out.'}, status=status.HTTP_200_OK)
