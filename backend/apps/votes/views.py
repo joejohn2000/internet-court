@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import Vote
@@ -9,16 +9,26 @@ def _get_voter(request):
     """Identify the voter: session user first, then X-User-Id header fallback."""
     if request.user and request.user.is_authenticated:
         return request.user
+    
+    # Fallback to header-based identification (used in some cross-origin scenarios)
     user_id = request.headers.get('X-User-Id') or request.META.get('HTTP_X_USER_ID')
     if user_id:
         try:
             return get_user_model().objects.get(id=int(user_id))
-        except (ValueError, get_user_model().DoesNotExist):
+        except (ValueError, TypeError, get_user_model().DoesNotExist):
             pass
     return None
 
 
-class VoteViewSet(viewsets.ModelViewSet):
+class VoteViewSet(mixins.CreateModelMixin,
+                  mixins.ListModelMixin,
+                  mixins.RetrieveModelMixin,
+                  viewsets.GenericViewSet):
+    """
+    ViewSet for handling votes. 
+    Strictly enforced: One user can only vote once per case.
+    Updates and deletions are disabled for verdict finality.
+    """
     queryset = Vote.objects.all()
     serializer_class = VoteSerializer
     permission_classes = [permissions.AllowAny]
