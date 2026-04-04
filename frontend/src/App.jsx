@@ -13,6 +13,15 @@ import {
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 axios.defaults.withCredentials = true;
 
+// Attach user identity to every request
+axios.interceptors.request.use((config) => {
+  try {
+    const u = JSON.parse(sessionStorage.getItem('ic_user') || 'null');
+    if (u?.id) config.headers['X-User-Id'] = u.id;
+  } catch { /* ignore */ }
+  return config;
+});
+
 /* ── Storage ── */
 const getStoredUser = () => {
   try { return JSON.parse(sessionStorage.getItem('ic_user') || 'null'); }
