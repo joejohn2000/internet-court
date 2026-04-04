@@ -122,6 +122,11 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-user-id',
+]
+
 # Security Settings for Cross-Origin Cookies
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
