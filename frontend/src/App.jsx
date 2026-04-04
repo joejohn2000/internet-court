@@ -24,11 +24,11 @@ axios.interceptors.request.use((config) => {
 
 /* ── Storage ── */
 const getStoredUser = () => {
-  try { return JSON.parse(sessionStorage.getItem('ic_user') || 'null'); }
+  try { return JSON.parse(localStorage.getItem('ic_user') || 'null'); }
   catch { return null; }
 };
-const storeUser = (u) => sessionStorage.setItem('ic_user', JSON.stringify(u));
-const clearUser = () => { sessionStorage.removeItem('ic_user'); sessionStorage.removeItem('ic_token'); };
+const storeUser = (u) => localStorage.setItem('ic_user', JSON.stringify(u));
+const clearUser = () => { localStorage.removeItem('ic_user'); localStorage.removeItem('ic_token'); };
 
 /* ── Shared Animations ── */
 const spring = { type: "spring", stiffness: 300, damping: 30 };
