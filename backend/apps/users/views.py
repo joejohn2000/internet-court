@@ -30,8 +30,11 @@ def user_register(request):
     if not username or not password:
         return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if get_user_model().objects.filter(username=username).exists():
-        return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already taken.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if email and User.objects.filter(email=email).exists():
+        return Response({'error': 'An account with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = get_user_model().objects.create_user(username=username, password=password, email=email)
     login(request, user)
@@ -91,9 +94,8 @@ def admin_login(request):
 def create_admin(request):
     """
     Create a new admin account.
-    Requires a valid existing admin's credentials (admin_username + admin_password)
-    as authorisation, then creates the new admin.
     """
+    User = get_user_model()
     # Authorise the caller first
     admin_username = request.data.get('admin_username', '').strip()
     admin_password = request.data.get('admin_password', '').strip()
@@ -109,8 +111,11 @@ def create_admin(request):
     if not new_username or not new_password:
         return Response({'error': 'new_username and new_password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if get_user_model().objects.filter(username=new_username).exists():
+    if User.objects.filter(username=new_username).exists():
         return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if new_email and User.objects.filter(email=new_email).exists():
+        return Response({'error': 'Email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
     new_admin = get_user_model().objects.create_superuser(
         username=new_username,
