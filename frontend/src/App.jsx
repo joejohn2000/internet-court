@@ -183,6 +183,7 @@ const Landing = ({ onGoLogin, onGoAdmin }) => (
 const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, showToast, footer, children, endpoint }) => {
   const [form, setForm] = useState({ username: '', password: '', email: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -224,15 +225,29 @@ const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, 
           {children && children(form, setForm)}
           <div className="field-group">
             <label htmlFor={`${idPrefix}-password`}>Password</label>
-            <input
-              id={`${idPrefix}-password`}
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                id={`${idPrefix}-password`}
+                type={showPassword ? "text" : "password"}
+                className="form-input"
+                style={{ paddingRight: '48px' }}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} className="eye-blink" />}
+              </button>
+            </div>
           </div>
           <button id={`${idPrefix}-submit`} className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', padding: '16px', marginBottom: '24px' }}>
             {loading ? 'Processing...' : submitText}
@@ -309,6 +324,8 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [newAdmin, setNewAdmin] = useState({ new_username: '', new_password: '', new_email: '', admin_password: '' });
   const [creating, setCreating] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showAuthPw, setShowAuthPw] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -478,12 +495,22 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                   </div>
                   <div className="field-group">
                     <label>Initial Access Key</label>
-                    <input id="new-admin-pw" className="form-input" type="password" value={newAdmin.new_password} onChange={e => setNewAdmin(n => ({ ...n, new_password: e.target.value }))} required />
+                    <div style={{ position: 'relative' }}>
+                      <input id="new-admin-pw" className="form-input" style={{ paddingRight: '48px' }} type={showNewPw ? "text" : "password"} value={newAdmin.new_password} onChange={e => setNewAdmin(n => ({ ...n, new_password: e.target.value }))} required />
+                      <button type="button" onClick={() => setShowNewPw(!showNewPw)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
+                        {showNewPw ? <EyeOff size={18} /> : <Eye size={18} className="eye-blink" />}
+                      </button>
+                    </div>
                   </div>
                   <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '32px 0' }} />
                   <div className="field-group">
                     <label>Confirm Your Authorization Key</label>
-                    <input id="auth-admin-pw" className="form-input" type="password" value={newAdmin.admin_password} onChange={e => setNewAdmin(n => ({ ...n, admin_password: e.target.value }))} required />
+                    <div style={{ position: 'relative' }}>
+                      <input id="auth-admin-pw" className="form-input" style={{ paddingRight: '48px' }} type={showAuthPw ? "text" : "password"} value={newAdmin.admin_password} onChange={e => setNewAdmin(n => ({ ...n, admin_password: e.target.value }))} required />
+                      <button type="button" onClick={() => setShowAuthPw(!showAuthPw)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
+                        {showAuthPw ? <EyeOff size={18} /> : <Eye size={18} className="eye-blink" />}
+                      </button>
+                    </div>
                   </div>
                   <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
                     {creating ? 'Processing...' : 'Authorize Personnel'}
