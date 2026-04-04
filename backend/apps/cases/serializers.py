@@ -52,6 +52,16 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def get_user_has_voted(self, obj):
         request = self.context.get('request')
-        if request and request.user and request.user.is_authenticated:
+        if not request:
+            return False
+        # Try session-based user first
+        if request.user and request.user.is_authenticated:
             return obj.votes.filter(voter=request.user).exists()
+        # Fallback: X-User-Id header
+        user_id = request.headers.get('X-User-Id') or request.META.get('HTTP_X_USER_ID')
+        if user_id:
+            try:
+                return obj.votes.filter(voter_id=int(user_id)).exists()
+            except (ValueError, TypeError):
+                pass
         return False
