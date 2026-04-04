@@ -71,6 +71,8 @@ import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(
+        # Use SQLite locally; use a proper Database (Postgres) on Render/Railway/Heroku
+        # If DATABASE_URL environment variable is missing, it resets on every deploy!
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600
     )
