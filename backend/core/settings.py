@@ -69,14 +69,26 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.config(
-        # Use SQLite locally; use a proper Database (Postgres) on Render/Railway/Heroku
-        # If DATABASE_URL environment variable is missing, it resets on every deploy!
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
-    )
-}
+# Database Configuration
+# ------------------------------------------------------------------------------
+# If DATABASE_URL is set (Render/Production), use Postgres. 
+# Otherwise, fall back to local SQLite for development.
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600
+        )
+    }
+    print("✅ DATABASE: Using PostgreSQL (Production)")
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    print("🏠 DATABASE: Using SQLite (Local Development)")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
