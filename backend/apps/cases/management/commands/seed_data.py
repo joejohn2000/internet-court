@@ -24,6 +24,16 @@ class Command(BaseCommand):
                 user.save()
             users.append(user)
 
+        # Create Admin/Superuser as requested
+        admin_user, created = User.objects.get_or_create(username='admin')
+        if created:
+            admin_user.email = 'admin@gmail.com'
+            admin_user.set_password('@Ab12345')
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.save()
+            self.stdout.write(self.style.SUCCESS('Admin user created: admin / admin123'))
+
         # 2. Create Categories
         cat_data = [
             ('Relationship Advice', 'relationship-advice'),

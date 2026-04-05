@@ -16,7 +16,7 @@ axios.defaults.withCredentials = true;
 // Attach user identity to every request
 axios.interceptors.request.use((config) => {
   try {
-    const u = JSON.parse(sessionStorage.getItem('ic_user') || 'null');
+    const u = JSON.parse(localStorage.getItem('ic_user') || 'null');
     if (u?.id) config.headers['X-User-Id'] = u.id;
   } catch { /* ignore */ }
   return config;
@@ -64,6 +64,19 @@ const App = () => {
 
   useEffect(() => {
     if (user) setPage(user.is_admin ? 'admin' : 'home');
+
+    // Handle session timeout or CSRF errors
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && [401, 403].includes(error.response.status)) {
+          showToast("Session expired or security error. Logging out.", "error");
+          handleLogout();
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
   return (
