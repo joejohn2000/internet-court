@@ -63,32 +63,11 @@ const App = () => {
     setPage('landing');
   };
 
-  const handleGuest = async () => {
-    let storedGuest = JSON.parse(localStorage.getItem('ic_guest_id') || 'null');
-    
-    if (!storedGuest) {
-      const suffix = Math.floor(Math.random() * 1000000);
-      storedGuest = { username: `spectator_${suffix}`, password: `pass_${suffix}` };
-      localStorage.setItem('ic_guest_id', JSON.stringify(storedGuest));
-    }
-
-    try {
-      // Try to login if user already exists, else register
-      let res;
-      try {
-        res = await axios.post(`${API}/users/login/`, storedGuest);
-      } catch {
-        res = await axios.post(`${API}/users/register/`, storedGuest);
-      }
-      
-      const userData = { ...res.data, is_guest: true, password: storedGuest.password };
-      storeUser(userData);
-      setUser(userData);
-      setPage('home');
-      showToast("Guest System Identification Authenticated. You may now vote and submit disputes.");
-    } catch (err) {
-      showToast("Neural Link Failed: Could not identify spectator.", "error");
-    }
+  const handleGuest = () => {
+    localStorage.removeItem('ic_guest_id'); // Clear previous persistent guest if any
+    setUser({ username: 'Spectator', is_guest: true });
+    setPage('home');
+    showToast("Entering Spectator Mode. Voting Enabled (IP-Locked).");
   };
 
   useEffect(() => {
