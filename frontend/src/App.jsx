@@ -63,6 +63,12 @@ const App = () => {
     setPage('landing');
   };
 
+  const handleGuest = () => {
+    setUser({ username: 'Spectator', is_guest: true });
+    setPage('home');
+    showToast("Entering Spectator Mode. Participation restricted.");
+  };
+
   useEffect(() => {
     if (user) setPage(user.is_admin ? 'admin' : 'home');
 
@@ -90,16 +96,13 @@ const App = () => {
 
       <AnimatePresence mode="wait">
         {page === 'landing' && (
-          <Landing key="landing" onGoLogin={() => setPage('login')} onGoAdmin={() => setPage('admin-login')} />
+          <Landing key="landing" onGoLogin={() => setPage('login')} onGuest={handleGuest} />
         )}
         {page === 'login' && (
           <LoginPage key="login" onLogin={handleAuthSuccess} onGoRegister={() => setPage('register')} onBack={() => setPage('landing')} showToast={showToast} />
         )}
         {page === 'register' && (
           <RegisterPage key="register" onRegister={handleAuthSuccess} onGoLogin={() => setPage('login')} onBack={() => setPage('landing')} showToast={showToast} />
-        )}
-        {page === 'admin-login' && (
-          <AdminLoginPage key="admin-login" onLogin={handleAuthSuccess} onBack={() => setPage('landing')} showToast={showToast} />
         )}
         {page === 'home' && (
           <HomePage key="home" user={user} onLogout={handleLogout} showToast={showToast} />
@@ -135,7 +138,7 @@ const App = () => {
 /* ═══════════════════════════════════════════════════════════
    LANDING PAGE
    ═══════════════════════════════════════════════════════════ */
-const Landing = ({ onGoLogin, onGoAdmin }) => (
+const Landing = ({ onGoLogin, onGuest }) => (
   <motion.div
     {...fadeIn}
     className="auth-page"
@@ -179,13 +182,13 @@ const Landing = ({ onGoLogin, onGoAdmin }) => (
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.4 }}
-      style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}
+      className="hero-actions"
     >
-      <button id="landing-login" className="btn btn-primary" onClick={onGoLogin} style={{ padding: '18px 40px', fontSize: '1.2rem' }}>
-        <UserCheck size={24} /> Enter as Juror
+      <button id="landing-login" className="btn btn-primary hero-btn" onClick={onGoLogin}>
+        <Shield size={24} /> Enter the Court
       </button>
-      <button id="landing-admin" className="btn btn-glass" onClick={onGoAdmin} style={{ padding: '18px 40px', fontSize: '1rem' }}>
-        <Shield size={20} /> Staff Login
+      <button id="landing-guest" className="btn btn-glass hero-btn" onClick={onGuest}>
+        <Eye size={24} /> Spectate
       </button>
     </motion.div>
   </motion.div>
@@ -316,18 +319,6 @@ const RegisterPage = ({ onRegister, onGoLogin, ...props }) => (
   </AuthPageBase>
 );
 
-const AdminLoginPage = props => (
-  <AuthPageBase
-    idPrefix="admin-login"
-    title="Admin Access"
-    sub="Command center authorization"
-    icon={<Shield size={32} color="var(--secondary)" />}
-    submitText="Authorize Entry"
-    endpoint="admin-login"
-    onAuth={props.onLogin}
-    {...props}
-  />
-);
 
 /* ═══════════════════════════════════════════════════════════
    ADMIN DASHBOARD
@@ -425,15 +416,18 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
           <button className={`admin-nav-item ${activeTab === 'create-admin' ? 'active' : ''}`} onClick={() => setActiveTab('create-admin')}>
             <PlusCircle size={20} /> <span>Operators</span>
           </button>
-        </nav>
-        <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
-          <div className="nav-user-chip" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--border-subtle)', color: 'white', marginBottom: '20px' }}>
-            <Shield size={14} color="var(--secondary)" /> <span>{user?.username}</span>
+          
+          <div className="admin-nav-spacer" style={{ marginTop: 'auto' }} />
+          
+          <div className="admin-sidebar-footer">
+            <div className="nav-user-chip" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--border-subtle)', color: 'white' }}>
+              <Shield size={14} color="var(--secondary)" /> <span>{user?.username}</span>
+            </div>
+            <button id="admin-logout" className="admin-nav-item logout-item" onClick={onLogout} style={{ color: 'var(--danger)' }}>
+              <LogOut size={20} /> <span>Sign Out</span>
+            </button>
           </div>
-          <button id="admin-logout" className="admin-nav-item" onClick={onLogout} style={{ width: '100%', color: 'var(--danger)' }}>
-            <LogOut size={20} /> <span>Sign Out</span>
-          </button>
-        </div>
+        </nav>
       </aside>
 
       <main className="admin-main">
@@ -802,20 +796,22 @@ const HomePage = ({ user, onLogout, showToast }) => {
   return (
     <div className="layout-container">
       <nav className="top-nav">
-        <div className="nav-logo grad-text font-serif">
-          <Gavel size={32} /> INTERNET COURT
+        <div className="nav-logo grad-text font-serif" onClick={() => setPage('home')} style={{ cursor: 'pointer' }}>
+          <Gavel size={32} /> <span>INTERNET COURT</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div className="nav-user-chip">
-            <UserCheck size={14} /> <span>{user?.username}</span>
+        <div className="nav-actions">
+          <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
+            {user?.is_guest ? <Shield size={14} /> : <UserCheck size={14} />} <span>{user?.username}</span>
           </div>
-          <button id="nav-case" className="btn btn-primary" onClick={() => setModalType('submit')}>
-            <PlusCircle size={18} /> Submit Case
-          </button>
+          {!user?.is_guest && (
+            <button id="nav-case" className="btn btn-primary" onClick={() => setModalType('submit')}>
+              <PlusCircle size={18} /> <span>Submit Case</span>
+            </button>
+          )}
           <button id="nav-feedback" className="btn btn-glass" onClick={() => setModalType('feedback')}>
             Feedback
           </button>
-          <button id="nav-logout" className="btn btn-glass" onClick={onLogout} style={{ padding: '10px' }}>
+          <button id="nav-logout" className="btn btn-glass icon-btn" onClick={onLogout}>
             <LogOut size={20} color="var(--danger)" />
           </button>
         </div>
@@ -859,7 +855,7 @@ const HomePage = ({ user, onLogout, showToast }) => {
                 <button onClick={() => setSelectedCase(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)' }}>
                   <X size={24} />
                 </button>
-                <CaseDetail item={selectedCase} showToast={showToast} onRefresh={() => { fetchContent(true); }} />
+                <CaseDetail item={selectedCase} user={user} showToast={showToast} onRefresh={() => { fetchContent(true); }} />
               </motion.section>
             )}
           </AnimatePresence>
@@ -937,7 +933,7 @@ const CaseCard = ({ item, isActive, onClick }) => {
 };
 
 /* ── CaseDetail ── */
-const CaseDetail = ({ item, showToast, onRefresh }) => {
+const CaseDetail = ({ item, user, showToast, onRefresh }) => {
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -976,29 +972,39 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
       </div>
 
       <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '32px' }}>
-        {hasActuallyVoted ? (
+        {hasActuallyVoted || user?.is_guest ? (
           <div className="glass-bright" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center' }}>
-            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>VERDICT SECURED</h3>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>Your contribution to digital justice has been logged. Thank you for your service, juror.</p>
+            {user?.is_guest ? (
+              <>
+                <EyeOff size={48} color="var(--text-dim)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>SPECTATOR PROTOCOL</h3>
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>You are currently viewing this case as a bystander. Sign in to weigh your verdict and Influence the court.</p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>VERDICT SECURED</h3>
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>Your contribution to digital justice has been logged. Thank you for your service, juror.</p>
+              </>
+            )}
           </div>
         ) : (
           <>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Gavel color="var(--accent)" /> CAST YOUR VERDICT
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--danger)' }}>
+            <div className="vote-btn-grid">
+              <button className="btn btn-glass vote-btn" onClick={() => handleVote('guilty')} style={{ border: '1px solid var(--danger)' }}>
                 <ThumbsUp size={32} color="var(--danger)" />
-                <span style={{ marginTop: '8px', fontWeight: 700 }}>GUILTY</span>
+                <span className="vote-btn-label">GUILTY</span>
               </button>
-              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--warning)' }}>
+              <button className="btn btn-glass vote-btn" onClick={() => handleVote('esh')} style={{ border: '1px solid var(--warning)' }}>
                 <MessageCircle size={32} color="var(--warning)" />
-                <span style={{ marginTop: '8px', fontWeight: 700 }}>ESH</span>
+                <span className="vote-btn-label">ESH</span>
               </button>
-              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ flexDirection: 'column', padding: '24px', height: '120px', border: '1px solid var(--success)' }}>
+              <button className="btn btn-glass vote-btn" onClick={() => handleVote('not_guilty')} style={{ border: '1px solid var(--success)' }}>
                 <ThumbsDown size={32} color="var(--success)" />
-                <span style={{ marginTop: '8px', fontWeight: 700 }}>NOT GUILTY</span>
+                <span className="vote-btn-label">NOT GUILTY</span>
               </button>
             </div>
           </>

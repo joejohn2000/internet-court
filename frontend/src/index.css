@@ -580,45 +580,205 @@ input:checked + .slider:before {
   transform: translateX(18px);
 }
 
-/* ── Responsive ── */
-@media (max-width: 1200px) {
-  .feed-list-section.with-detail {
-    flex: 0 0 400px;
+/* ── Navigation Helpers ── */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.icon-btn {
+  padding: 10px !important;
+}
+
+/* ── Vote Interface ── */
+.vote-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.vote-btn {
+  flex-direction: column;
+  padding: 24px !important;
+  height: 140px !important;
+  transition: all 0.3s ease;
+}
+
+.vote-btn-label {
+  margin-top: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.vote-btn:hover {
+  transform: scale(1.05) !important;
+  background: rgba(255,255,255,0.08) !important;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-btn {
+  padding: 18px 48px !important;
+  font-size: 1.3rem !important;
+  min-width: 240px;
+}
+
+@media (max-width: 600px) {
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    gap: 16px;
   }
+  .hero-actions .hero-btn {
+    width: 100% !important;
+    padding: 16px 24px !important;
+    font-size: 1.1rem !important;
+  }
+}
+
+/* ── Admin Specifics ── */
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 24px;
+}
+
+/* ── Responsive Architecture ── */
+@media (max-width: 1280px) {
+  .main-content { padding: 100px 20px 40px; }
+  .feed-list-section.with-detail { flex: 0 0 380px; }
 }
 
 @media (max-width: 1024px) {
-  .admin-sidebar { width: 80px; padding: 24px 16px; }
-  .admin-sidebar-logo span, .admin-nav-item span { display: none; }
-  .admin-nav-item { justify-content: center; }
+  .hero-title { font-size: 3.5rem; }
+  .feed-header { flex-direction: column; gap: 8px; }
+  .feed-title { font-size: 2.5rem; }
   
-  .feed-list-section.with-detail {
-    flex: 0 0 320px;
+  .admin-layout { flex-direction: column; position: relative; }
+  .admin-sidebar { 
+    width: 100%; 
+    height: auto; 
+    position: sticky; 
+    top: 0; 
+    flex-direction: row; 
+    padding: 12px 20px; 
+    z-index: 1001;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
   }
+  .admin-sidebar-logo { margin-bottom: 0; padding-right: 20px; border-right: 1px solid var(--border-subtle); min-width: max-content; }
+  .admin-sidebar-logo span { display: none; }
+  
+  .admin-nav { flex-direction: row; gap: 8px; flex: 1; align-items: center; }
+  .admin-nav-spacer { display: none; }
+  .admin-sidebar-footer { margin-top: 0; padding-top: 0; border: none; flex-direction: row; align-items: center; margin-left: auto; }
+  .admin-sidebar-footer .nav-user-chip { display: none; }
+  .admin-nav-item span { display: none; }
+  .admin-nav-item { padding: 10px; min-width: 44px; justify-content: center; }
+  .admin-main { padding: 40px 20px; width: 100%; }
 }
 
 @media (max-width: 900px) {
-  .feed-layout { flex-direction: column; }
+  .top-nav { padding: 0 16px; height: 70px; }
+  .nav-logo span { display: none; }
+  #nav-feedback { display: none; }
+  .nav-actions { gap: 10px; }
+  
+  .feed-layout { flex-direction: column; position: relative; }
   .feed-list-section.with-detail { flex: 1; width: 100%; }
+  
   .detail-panel { 
-    position: relative !important; 
-    top: 0 !important; 
-    height: auto !important; 
-    max-height: none !important; 
-    width: 100%;
+    position: fixed !important; 
+    inset: 0 !important;
+    top: 0 !important;
+    height: 100vh !important; 
+    width: 100vw !important;
+    z-index: 2000 !important;
+    border-radius: 0 !important;
+    padding: 80px 20px 40px !important;
+    background: var(--bg-surface) !important;
   }
+
+  .main-content { padding-top: 90px; }
+  .vote-btn { height: 120px !important; padding: 16px !important; }
+  .vote-btn-label { font-size: 0.8rem; }
 }
 
 @media (max-width: 768px) {
-  .hero-title { font-size: 3.5rem; }
-  .auth-card { padding: 32px; }
+  .hero-title { font-size: 2.8rem; }
+  .auth-card { padding: 32px 24px; border-radius: var(--radius-md); }
+  .auth-title { font-size: 1.8rem; }
+  
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stat-card { padding: 20px; }
+  .stat-value { font-size: 1.8rem; }
+  
+  .case-card { padding: 24px; }
+  .feed-title { font-size: 2rem; }
+  
+  .btn { padding: 10px 18px; font-size: 0.9rem; }
+  
+  header h1 { font-size: 1.8rem !important; }
+  
+  .vote-btn-grid { gap: 8px; }
+}
+
+@media (max-width: 600px) {
+  .top-nav { height: 64px; }
+  .nav-actions { gap: 8px; }
+  .nav-actions .btn { padding: 8px 12px; }
+  .nav-logo { font-size: 1.1rem; }
+  #nav-case span { display: none; }
+  #nav-case { padding: 10px; border-radius: 50%; width: 44px; height: 44px; }
+  #nav-logout { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; }
+
+  .vote-btn-grid { grid-template-columns: 1fr; }
+  .vote-btn { height: 80px !important; flex-direction: row; gap: 16px; justify-content: flex-start; }
+  .vote-btn-label { margin-top: 0; }
+  
+  .admin-sidebar { padding: 8px 12px; }
+  .admin-sidebar-logo { padding-right: 12px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .feed-title { font-size: 1.6rem; }
+  .modal-backdrop { padding: 0; }
+  .modal-backdrop > .glass { 
+    max-width: 100%; 
+    height: 100vh; 
+    border-radius: 0; 
+    padding: 60px 20px !important; 
+  }
 }
 
 /* ── Custom Scrollbar ── */
-::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { 
   background: var(--border-bright); 
-  border-radius: 4px;
+  border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Interactive Tables Fix ── */
+.glass table {
+  min-width: 600px;
+}
+.glass div[style*="overflowX: auto"] {
+  border-radius: 12px;
+  background: rgba(0,0,0,0.2);
+}
