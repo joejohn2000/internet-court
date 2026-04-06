@@ -5,6 +5,20 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def cleanup_duplicate_votes(apps, schema_editor):
+    Vote = apps.get_model('votes', 'Vote')
+    # Keep the earliest vote found for each case-IP combination. 
+    # Since all existing votes from Render will acquire the default '127.0.0.1', 
+    # this step ensures we don't violate the uniqueness constraint.
+    seen_keys = set()
+    for vote in Vote.objects.all().order_by('id'):
+        key = (vote.case_id, vote.ip_address)
+        if key in seen_keys:
+            vote.delete()
+        else:
+            seen_keys.add(key)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -24,6 +38,7 @@ class Migration(migrations.Migration):
             field=models.GenericIPAddressField(db_index=True, default='127.0.0.1'),
             preserve_default=False,
         ),
+        migrations.RunPython(cleanup_duplicate_votes),
         migrations.AlterField(
             model_name='vote',
             name='voter',
