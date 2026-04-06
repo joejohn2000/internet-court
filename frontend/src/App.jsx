@@ -7,7 +7,8 @@ import {
   Shield, Users, BarChart2, LogOut, PlusCircle,
   UserCheck, Eye, EyeOff, Flame, Scale, Hash,
   ChevronRight, ArrowLeft, Send, Sparkles,
-  ExternalLink, User, UserPlus
+  ExternalLink, User, UserPlus, Edit, Trash2, Filter, Search,
+  Layers, Bookmark, Grid
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
@@ -335,40 +336,73 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
   const [stats, setStats] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [feedbacks, setFeedbacks] = useState([]);
+  const [adminCases, setAdminCases] = useState([]);
+  const [caseFilters, setCaseFilters] = useState({ name: '', status: '', category: '' });
+  const [adminCats, setAdminCats] = useState([]);
+  const [editingCase, setEditingCase] = useState(null);
+  const [editingDomain, setEditingDomain] = useState(null);
+  const [isCreatingDomain, setIsCreatingDomain] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ new_username: '', new_password: '', new_email: '', admin_password: '' });
   const [creating, setCreating] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showAuthPw, setShowAuthPw] = useState(false);
+  const [loadingCases, setLoadingCases] = useState(false);
+
+  const fetchCases = useCallback(async () => {
+    setLoadingCases(true);
+    try {
+      const params = new URLSearchParams();
+      if (caseFilters.name) params.append('name', caseFilters.name);
+      if (caseFilters.status) params.append('status', caseFilters.status);
+      if (caseFilters.category) params.append('category', caseFilters.category);
+      
+      const res = await axios.get(`${API}/cases/?${params.toString()}`);
+      setAdminCases(Array.isArray(res.data) ? res.data : res.data.results || []);
+    } catch (err) { console.error(err); }
+    setLoadingCases(false);
+  }, [caseFilters]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sRes, fRes] = await Promise.all([
+        const [sRes, fRes, cRes] = await Promise.all([
           axios.get(`${API}/users/admin-stats/`),
-          axios.get(`${API}/feedback/`)
+          axios.get(`${API}/feedback/`),
+          axios.get(`${API}/categories/`)
         ]);
         setStats(sRes.data);
         setFeedbacks(Array.isArray(fRes.data) ? fRes.data : fRes.data.results || []);
+        setAdminCats(Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []);
       } catch (err) { console.error(err); }
     };
     fetchData();
-  }, [activeTab]);
+    if (activeTab === 'cases') fetchCases();
+  }, [activeTab, fetchCases]);
 
-  const handleCreateAdmin = async (e) => {
-    e.preventDefault();
-    setCreating(true);
+  const handleDeleteCase = async (id) => {
+    if (!window.confirm("Are you sure you want to strike this case from the record? This cannot be undone.")) return;
     try {
-      await axios.post(`${API}/users/create-admin/`, {
-        ...newAdmin,
-        admin_username: user.username,
-      });
-      showToast('New administrator registered.');
-      setNewAdmin({ new_username: '', new_password: '', new_email: '', admin_password: '' });
-      setActiveTab('overview');
+      await axios.delete(`${API}/cases/${id}/`);
+      showToast("Case permanently removed.");
+      fetchCases();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Registration failed.', 'error');
+      showToast("Deletion failed.", "error");
     }
-    setCreating(false);
+  };
+
+  const handleDeleteDomain = async (id) => {
+    if (!window.confirm("Strike this domain from existence? Any linked cases will lose their domain assignment.")) return;
+    try {
+      await axios.delete(`${API}/categories/${id}/`);
+      showToast("Domain removed.");
+      // Force refresh stats & domains
+      const [sRes, cRes] = await Promise.all([
+        axios.get(`${API}/users/admin-stats/`),
+        axios.get(`${API}/categories/`)
+      ]);
+      setStats(sRes.data);
+      setAdminCats(Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []);
+    } catch (err) { showToast("Action aborted.", "error"); }
   };
 
   return (
@@ -381,6 +415,12 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
         <nav className="admin-nav">
           <button className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             <BarChart2 size={20} /> <span>Analytics</span>
+          </button>
+          <button className={`admin-nav-item ${activeTab === 'cases' ? 'active' : ''}`} onClick={() => setActiveTab('cases')}>
+            <Gavel size={20} /> <span>Case Files</span>
+          </button>
+          <button className={`admin-nav-item ${activeTab === 'domains' ? 'active' : ''}`} onClick={() => setActiveTab('domains')}>
+            <Layers size={20} /> <span>Domains</span>
           </button>
           <button className={`admin-nav-item ${activeTab === 'create-admin' ? 'active' : ''}`} onClick={() => setActiveTab('create-admin')}>
             <PlusCircle size={20} /> <span>Operators</span>
@@ -399,7 +439,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
       <main className="admin-main">
         <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 className="font-serif" style={{ fontSize: '2.5rem' }}>
-            {activeTab === 'overview' ? 'System Overview' : 'Personnel Management'}
+            {activeTab === 'overview' ? 'System Overview' : activeTab === 'cases' ? 'Docket Management' : activeTab === 'domains' ? 'Domain Protocols' : 'Personnel Management'}
           </h1>
           <div className="glass" style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
             System Status: <span style={{ color: 'var(--success)', fontWeight: 700 }}>OPERATIONAL</span>
@@ -493,11 +533,197 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                 </div>
               </div>
             </motion.div>
+          ) : activeTab === 'cases' ? (
+            <motion.div key="cases" {...fadeIn}>
+              <div className="glass" style={{ padding: '24px', borderRadius: '16px', marginBottom: '32px', display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>SEARCH BY NAME/HOOK</label>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                    <input 
+                      className="form-input" 
+                      style={{ paddingLeft: '40px' }} 
+                      placeholder="Enter citizen name or case hook..." 
+                      value={caseFilters.name}
+                      onChange={e => setCaseFilters(f => ({ ...f, name: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div style={{ width: '180px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>VOTE STATUS</label>
+                  <select 
+                    className="form-input"
+                    value={caseFilters.status}
+                    onChange={e => setCaseFilters(f => ({ ...f, status: e.target.value }))}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div style={{ width: '180px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>DOMAIN</label>
+                  <select 
+                    className="form-input"
+                    value={caseFilters.category}
+                    onChange={e => setCaseFilters(f => ({ ...f, category: e.target.value }))}
+                  >
+                    <option value="">All Domains</option>
+                    {adminCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <button className="btn btn-primary" onClick={() => fetchCases()} style={{ height: '48px', padding: '0 24px' }}>
+                  <Filter size={18} /> Apply Filters
+                </button>
+              </div>
+
+              <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-dim)', fontSize: '0.8rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <th style={{ padding: '16px' }}>HOOK / IDENTITY</th>
+                        <th style={{ padding: '16px' }}>DOMAIN</th>
+                        <th style={{ padding: '16px' }}>VERDICT STATS</th>
+                        <th style={{ padding: '16px' }}>STATUS</th>
+                        <th style={{ padding: '16px' }}>PROTOCOL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingCases && <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>Accessing Dossiers...</td></tr>}
+                      {!loadingCases && adminCases.length === 0 && <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No matching casefiles found.</td></tr>}
+                      {adminCases.map(c => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '4px' }}>{c.title_hook}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Author: {c.author_name}</div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', fontSize: '0.7rem', fontWeight: 800 }}>
+                              {c.category?.name || 'GENERIC'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
+                              <span style={{ color: 'var(--danger)' }}>{c.votes_guilty}G</span>
+                              <span style={{ color: 'var(--warning)' }}>{c.votes_esh}E</span>
+                              <span style={{ color: 'var(--success)' }}>{c.votes_not_guilty}N</span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>Total: {c.total_votes}</div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ 
+                              padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 800,
+                              background: c.status === 'open' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                              color: c.status === 'open' ? '#10b981' : '#f43f5e'
+                            }}>
+                              {c.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <button onClick={() => setEditingCase(c)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}>
+                                <Edit size={18} />
+                              </button>
+                              <button onClick={() => handleDeleteCase(c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {editingCase && (
+                <Modal 
+                  type="edit-case" 
+                  item={editingCase} 
+                  cats={[]} // Category fetching can be added if needed, or pass from parent
+                  onClose={() => setEditingCase(null)} 
+                  onSuccess={() => { setEditingCase(null); fetchCases(); }} 
+                  showToast={showToast} 
+                />
+              )}
+            </motion.div>
+          ) : activeTab === 'domains' ? (
+            <motion.div key="domains" {...fadeIn}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
+                <button className="btn btn-primary" onClick={() => setIsCreatingDomain(true)}>
+                  <PlusCircle size={18} /> Establish New Domain
+                </button>
+              </div>
+
+              <div className="glass" style={{ borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-dim)', fontSize: '0.8rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <th style={{ padding: '16px' }}>DOMAIN IDENTITY</th>
+                        <th style={{ padding: '16px' }}>SYSTEM SLUG</th>
+                        <th style={{ padding: '16px' }}>PROTOCOL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminCats.length === 0 && <tr><td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>No domains integrated.</td></tr>}
+                      {adminCats.map(c => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '16px', fontWeight: 800, fontSize: '1.1rem' }}>{c.name}</td>
+                          <td style={{ padding: '16px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>/{c.slug}</td>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <button onClick={() => setEditingDomain(c)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}>
+                                <Edit size={18} />
+                              </button>
+                              <button onClick={() => handleDeleteDomain(c.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {(isCreatingDomain || editingDomain) && (
+                <Modal 
+                  type={isCreatingDomain ? "create-domain" : "edit-domain"} 
+                  item={editingDomain} 
+                  onClose={() => { setIsCreatingDomain(false); setEditingDomain(null); }} 
+                  onSuccess={async () => {
+                    setIsCreatingDomain(false);
+                    setEditingDomain(null);
+                    const cRes = await axios.get(`${API}/categories/`);
+                    setAdminCats(Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []);
+                  }} 
+                  showToast={showToast} 
+                />
+              )}
+            </motion.div>
           ) : (
             <motion.div key="create" {...fadeIn} style={{ maxWidth: '600px' }}>
               <div className="glass" style={{ padding: '48px', borderRadius: 'var(--radius-lg)' }}>
                 <h2 className="font-serif" style={{ fontSize: '2rem', marginBottom: '32px' }}>Enroll Agent</h2>
-                <form onSubmit={handleCreateAdmin}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setCreating(true);
+                  try {
+                    await axios.post(`${API}/users/create-admin/`, {
+                      ...newAdmin,
+                      admin_username: user.username,
+                    });
+                    showToast('New administrator registered.');
+                    setNewAdmin({ new_username: '', new_password: '', new_email: '', admin_password: '' });
+                    setActiveTab('overview');
+                  } catch (err) {
+                    showToast(err.response?.data?.error || 'Registration failed.', 'error');
+                  }
+                  setCreating(false);
+                }}>
                   <div className="field-group">
                     <label>Agent Username</label>
                     <input id="new-admin-user" className="form-input" value={newAdmin.new_username} onChange={e => setNewAdmin(n => ({ ...n, new_username: e.target.value }))} required />
@@ -525,7 +751,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                       </button>
                     </div>
                   </div>
-                  <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
+                   <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
                     {creating ? 'Processing...' : 'Authorize Personnel'}
                   </button>
                 </form>
@@ -805,8 +1031,18 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
 };
 
 /* ── Modal ── */
-const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
-  const [form, setForm] = useState({ hook: '', story: '', category: '', author_name: '', feedback_type: 'other', message: '', email: '' });
+const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
+  const [form, setForm] = useState({ 
+    hook: item?.title_hook || '', 
+    story: item?.full_story || '', 
+    category: item?.category?.name || item?.name || '', 
+    author_name: item?.author_name || '', 
+    status: item?.status || 'open',
+    slug: item?.slug || '',
+    feedback_type: 'other', 
+    message: '', 
+    email: '' 
+  });
   const [anon, setAnon] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -823,6 +1059,25 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
           author_name: anon ? '' : (form.author_name || user?.username || '')
         });
         showToast('Case submitted to public record.');
+      } else if (type === 'edit-case') {
+        await axios.patch(`${API}/cases/${item.id}/`, {
+          title_hook: form.hook,
+          full_story: form.story,
+          status: form.status
+        });
+        showToast('Case record updated.');
+      } else if (type === 'create-domain') {
+        await axios.post(`${API}/categories/`, {
+          name: form.category,
+          slug: form.slug
+        });
+        showToast('New domain established.');
+      } else if (type === 'edit-domain') {
+        await axios.patch(`${API}/categories/${item.id}/`, {
+          name: form.category,
+          slug: form.slug
+        });
+        showToast('Domain protocol revised.');
       } else {
         await axios.post(`${API}/feedback/`, {
           feedback_type: form.feedback_type,
@@ -843,33 +1098,71 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
           <X size={24} />
         </button>
 
-        <h2 className="font-serif" style={{ fontSize: '2.4rem', marginBottom: '32px' }}>{type === 'submit' ? 'Submit Dispute' : 'Feedback Center'}</h2>
+        <h2 className="font-serif" style={{ fontSize: '2.4rem', marginBottom: '32px' }}>
+          {type === 'submit' ? 'Submit Dispute' : type === 'edit-case' ? 'Edit Dossier' : type === 'create-domain' ? 'Establish Domain' : type === 'edit-domain' ? 'Revise Domain' : 'Feedback Center'}
+        </h2>
 
         <form onSubmit={handleSubmit}>
-          {type === 'submit' ? (
+          {type.includes('domain') ? (
             <div style={{ display: 'grid', gap: '20px' }}>
-              <div className="anon-toggle-wrap">
-                <label className="anon-toggle">
-                  <input type="checkbox" checked={anon} onChange={e => setAnon(e.target.checked)} />
-                  <span className="slider" />
-                </label>
-                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Submit as Anonymous</span>
+              <div className="field-group">
+                <label>Domain Identity</label>
+                <input 
+                  className="form-input" 
+                  placeholder="e.g. Workplace" 
+                  value={form.category} 
+                  onChange={e => setForm({ ...form, category: e.target.value })} 
+                  required 
+                />
               </div>
+              <div className="field-group">
+                <label>System Slug</label>
+                <input 
+                  className="form-input" 
+                  placeholder="e.g. workplace-politics" 
+                  value={form.slug} 
+                  onChange={e => setForm({ ...form, slug: e.target.value })} 
+                />
+              </div>
+            </div>
+          ) : type === 'submit' || type === 'edit-case' ? (
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {type === 'submit' && (
+                <div className="anon-toggle-wrap">
+                  <label className="anon-toggle">
+                    <input type="checkbox" checked={anon} onChange={e => setAnon(e.target.checked)} />
+                    <span className="slider" />
+                  </label>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Submit as Anonymous</span>
+                </div>
+              )}
 
-              {!anon && (
+              {type === 'edit-case' && (
+                <div className="field-group">
+                  <label>Operational Status</label>
+                  <select className="form-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} required>
+                    <option value="open">Open for Judging</option>
+                    <option value="closed">Verdict Reached</option>
+                  </select>
+                </div>
+              )}
+
+              {type === 'submit' && !anon && (
                 <div className="field-group">
                   <label>Display Name</label>
                   <input id="case-author" className="form-input" placeholder={user?.username} value={form.author_name} onChange={e => setForm({ ...form, author_name: e.target.value })} />
                 </div>
               )}
 
-              <div className="field-group">
-                <label>Category</label>
-                <select id="case-cat" className="form-input" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required>
-                  <option value="">Select Domain...</option>
-                  {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </div>
+              {type === 'submit' && (
+                <div className="field-group">
+                  <label>Category</label>
+                  <select id="case-cat" className="form-input" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required>
+                    <option value="">Select Domain...</option>
+                    {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div className="field-group">
                 <label>Attention Hook</label>
@@ -903,7 +1196,7 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast }) => {
           )}
 
           <button id="modal-submit" type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '32px', padding: '16px' }}>
-            {loading ? 'Transmitting...' : (type === 'submit' ? 'Lodge Dispute' : 'Send Feedback')}
+            {loading ? 'Transmitting...' : (type === 'submit' ? 'Lodge Dispute' : type.includes('edit') ? 'Update Record' : type === 'create-domain' ? 'Establish Domain' : 'Send Feedback')}
           </button>
         </form>
       </motion.div>
