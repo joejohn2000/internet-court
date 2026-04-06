@@ -8,7 +8,7 @@ import {
   UserCheck, Eye, EyeOff, Flame, Scale, Hash,
   ChevronRight, ArrowLeft, Send, Sparkles,
   ExternalLink, User, UserPlus, Edit, Trash2, Filter, Search,
-  Layers, Bookmark, Grid
+  Layers, Bookmark, Grid, History
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
@@ -100,7 +100,10 @@ const App = () => {
           <RegisterPage key="register" onRegister={handleAuthSuccess} onGoLogin={() => setPage('login')} onBack={() => setPage('landing')} showToast={showToast} />
         )}
         {page === 'home' && (
-          <HomePage key="home" user={user} onLogout={handleLogout} showToast={showToast} />
+          <HomePage key="home" user={user} onLogout={handleLogout} showToast={showToast} setPage={setPage} />
+        )}
+        {page === 'history' && (
+          <HistoryPage key="history" user={user} onBack={() => setPage('home')} showToast={showToast} />
         )}
         {page === 'admin' && (
           <AdminDashboard key="admin" user={user} onLogout={handleLogout} showToast={showToast} />
@@ -806,6 +809,11 @@ const HomePage = ({ user, onLogout, showToast }) => {
           <button id="nav-feedback" className="btn btn-glass icon-btn" onClick={() => setModalType('feedback')} title="Send Feedback">
             <MessageCircle size={20} />
           </button>
+          {!user?.is_guest && (
+            <button id="nav-history" className="btn btn-glass icon-btn" onClick={() => setPage('history')} title="View My Records">
+              <History size={20} />
+            </button>
+          )}
           <div className="nav-divider" />
           {user && (
             <button id="nav-case" className="btn btn-primary" onClick={() => setModalType('submit')}>
@@ -1193,6 +1201,94 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
           </button>
         </form>
       </motion.div>
+    </motion.div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   HISTORY PAGE
+   ═══════════════════════════════════════════════════════════ */
+const HistoryPage = ({ user, onBack, showToast }) => {
+  const [filter, setFilter] = useState('all');
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true);
+      try {
+        const [cRes, vRes] = await Promise.all([
+          axios.get(`${API}/cases/?author_id=${user.id}`),
+          axios.get(`${API}/votes/?user_id=${user.id}`)
+        ]);
+        
+        const cases = (Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []).map(c => ({ ...c, type: 'case' }));
+        const votes = (Array.isArray(vRes.data) ? vRes.data : vRes.data.results || []).map(v => ({ ...v, type: 'vote' }));
+        
+        setRecords([...cases, ...votes].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
+      } catch (err) { showToast("Protocol failed to retrieve history.", "error"); }
+      setLoading(false);
+    };
+    fetchHistory();
+  }, [user.id, showToast]);
+
+  const filtered = records.filter(r => filter === 'all' || r.type === (filter === 'cases' ? 'case' : 'vote'));
+
+  return (
+    <motion.div {...fadeIn} className="layout-container" style={{ background: 'var(--bg-paper)', color: '#000', minHeight: '100vh' }}>
+      <nav className="top-nav" style={{ background: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+        <div className="nav-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
+          <ArrowLeft size={24} color="#000" />
+          <span style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '2px', color: '#000', marginLeft: '12px' }}>ARCHIVAL RECORDS</span>
+        </div>
+        <div className="nav-actions">
+           <div className="nav-user-chip" style={{ color: '#000', borderColor: 'rgba(0,0,0,0.2)' }}>
+             <UserCheck size={18} /> <span>{user.username.toUpperCase()}</span>
+           </div>
+        </div>
+      </nav>
+
+      <main className="main-content" style={{ maxWidth: '800px', margin: '0 auto', padding: '120px 24px' }}>
+        <header style={{ marginBottom: '48px', borderBottom: '4px solid #000', paddingBottom: '24px' }}>
+          <h1 className="font-serif" style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px' }}>Personal Logs</h1>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {['all', 'cases', 'votes'].map(f => (
+              <button 
+                key={f}
+                className={`btn ${filter === f ? 'btn-primary' : 'btn-glass'}`}
+                onClick={() => setFilter(f)}
+                style={filter !== f ? { color: '#000', border: '1px solid #000' } : {}}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        {loading ? (
+          <p>Accessing archive...</p>
+        ) : filtered.length === 0 ? (
+          <p style={{ opacity: 0.5 }}>No records found in this cycle.</p>
+        ) : (
+          <div style={{ display: 'grid', gap: '32px' }}>
+            {filtered.map(r => (
+              <div key={r.type + r.id} className="glass" style={{ padding: '32px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, background: r.type === 'case' ? 'var(--accent)' : 'var(--ink-black)', color: r.type === 'case' ? '#000' : '#fff', padding: '4px 12px', borderRadius: '4px' }}>
+                    {r.type.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
+                  {r.type === 'case' ? r.title_hook : `Voted ${r.decision?.toUpperCase().replace('_', ' ')}`}
+                </h3>
+                {r.type === 'vote' && <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>Record Entry: #{r.case}</p>}
+                {r.type === 'case' && <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>{r.full_story.substring(0, 100)}...</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </motion.div>
   );
 };

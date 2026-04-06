@@ -37,6 +37,20 @@ def user_register(request):
         return Response({'error': 'An account with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = get_user_model().objects.create_user(username=username, password=password, email=email)
+    
+    # HISTORY MIGRATION: Connect anonymous IP-based history to this new account
+    try:
+        x_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_for.split(',')[0].strip() if x_for else request.META.get('REMOTE_ADDR')
+        
+        from apps.cases.models import Case
+        from apps.votes.models import Vote
+        
+        Case.objects.filter(ip_address=ip, author__isnull=True).update(author=user)
+        Vote.objects.filter(ip_address=ip, voter__isnull=True).update(voter=user)
+    except Exception as e:
+        print(f"History migration failed: {e}")
+
     login(request, user)
     return Response(get_user_response(user), status=status.HTTP_201_CREATED)
 
