@@ -5,15 +5,42 @@ from .models import Case, Category
 from .serializers import CaseSerializer, CategorySerializer
 
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
 
 class CaseViewSet(viewsets.ModelViewSet):
-    queryset = Case.objects.all().order_by('-created_at')
     serializer_class = CaseSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Case.objects.all().order_by('-created_at')
+        
+        # Simple Filtering
+        name_filter = self.request.query_params.get('name')
+        if name_filter:
+            queryset = queryset.filter(title_hook__icontains=name_filter) | queryset.filter(author__username__icontains=name_filter)
+            
+        category_filter = self.request.query_params.get('category')
+        if category_filter:
+            queryset = queryset.filter(category__name__icontains=category_filter)
+
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        return queryset
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAdminUser()]
+        return super().get_permissions()
 
     def perform_create(self, serializer):
         from django.contrib.auth import get_user_model
