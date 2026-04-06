@@ -63,10 +63,32 @@ const App = () => {
     setPage('landing');
   };
 
-  const handleGuest = () => {
-    setUser({ username: 'Spectator', is_guest: true });
-    setPage('home');
-    showToast("Entering Spectator Mode. Participation restricted.");
+  const handleGuest = async () => {
+    let storedGuest = JSON.parse(localStorage.getItem('ic_guest_id') || 'null');
+    
+    if (!storedGuest) {
+      const suffix = Math.floor(Math.random() * 1000000);
+      storedGuest = { username: `spectator_${suffix}`, password: `pass_${suffix}` };
+      localStorage.setItem('ic_guest_id', JSON.stringify(storedGuest));
+    }
+
+    try {
+      // Try to login if user already exists, else register
+      let res;
+      try {
+        res = await axios.post(`${API}/users/login/`, storedGuest);
+      } catch {
+        res = await axios.post(`${API}/users/register/`, storedGuest);
+      }
+      
+      const userData = { ...res.data, is_guest: true, password: storedGuest.password };
+      storeUser(userData);
+      setUser(userData);
+      setPage('home');
+      showToast("Guest System Identification Authenticated. You may now vote and submit disputes.");
+    } catch (err) {
+      showToast("Neural Link Failed: Could not identify spectator.", "error");
+    }
   };
 
   useEffect(() => {
@@ -88,12 +110,6 @@ const App = () => {
 
   return (
     <div className="layout-container">
-      <div className="bg-blobs">
-        <div className="blob blob-1" />
-        <div className="blob blob-2" />
-        <div className="blob blob-3" />
-      </div>
-
       <AnimatePresence mode="wait">
         {page === 'landing' && (
           <Landing key="landing" onGoLogin={() => setPage('login')} onGuest={handleGuest} />
@@ -148,34 +164,27 @@ const Landing = ({ onGoLogin, onGuest }) => (
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ ...spring, delay: 0.1 }}
-      className="hero-icon-glow"
-      style={{
-        width: '120px', height: '120px', borderRadius: '40px',
-        background: 'var(--grad-linear)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: '40px', boxShadow: '0 0 60px var(--accent-glow)'
-      }}
+      style={{ marginBottom: '60px' }}
     >
-      <Gavel size={56} color="white" />
+      <img src="/assets/logo.png" alt="Logo" className="logo-img" style={{ height: '180px', width: 'auto' }} />
     </motion.div>
 
     <motion.h1
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.2 }}
-      className="font-serif"
-      style={{ fontSize: '5rem', fontWeight: 900, marginBottom: '16px', lineHeight: 1 }}
+      className="hero-title"
     >
-      Internet <span className="grad-text">Court</span>
+      Internet COURT
     </motion.h1>
 
     <motion.p
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3 }}
-      style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 48px' }}
+      style={{ fontSize: '1.65rem', color: 'var(--text-on-dark)', fontWeight: 300, maxWidth: '800px', margin: '0 auto 60px', textTransform: 'uppercase', letterSpacing: '4px' }}
     >
-      Where the masses settle the score.<br />Submit your conflict. Face the verdict.
+      Where the masses settle the score.<br />Face the verdict.
     </motion.p>
 
     <motion.div
@@ -216,7 +225,7 @@ const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, 
 
   return (
     <motion.div {...slideUp} className="auth-page">
-      <div className="auth-card glass">
+      <div className="auth-card">
         <button className="btn btn-glass" onClick={onBack} style={{ position: 'absolute', top: '24px', right: '24px', padding: '10px' }}>
           <X size={20} />
         </button>
@@ -224,7 +233,7 @@ const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, 
         <div className="auth-icon-wrap">
           {icon}
         </div>
-        <h2 className="auth-title grad-text">{title}</h2>
+        <h2 className="auth-title">{title}</h2>
         <p className="auth-sub">{sub}</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -279,9 +288,9 @@ const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, 
 const LoginPage = ({ onLogin, onGoRegister, ...props }) => (
   <AuthPageBase
     idPrefix="user-login"
-    title="Sign In"
-    sub="Join the digital jury"
-    icon={<User size={32} color="var(--accent)" />}
+    title="Authorization"
+    sub="Citizenship ID Verification"
+    icon={<Shield size={32} color="var(--accent)" />}
     submitText="Access Court"
     endpoint="login"
     onAuth={onLogin}
@@ -297,8 +306,8 @@ const LoginPage = ({ onLogin, onGoRegister, ...props }) => (
 const RegisterPage = ({ onRegister, onGoLogin, ...props }) => (
   <AuthPageBase
     idPrefix="user-register"
-    title="Register"
-    sub="Enlist in the world's first open court"
+    title="Enlistment"
+    sub="Register for the Global Jury Pool"
     icon={<UserPlus size={32} color="var(--accent)" />}
     submitText="Register for Service"
     endpoint="register"
@@ -338,6 +347,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
   const [showNewPw, setShowNewPw] = useState(false);
   const [showAuthPw, setShowAuthPw] = useState(false);
   const [loadingCases, setLoadingCases] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchCases = useCallback(async () => {
     setLoadingCases(true);
@@ -397,23 +407,37 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
   };
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar glass">
-        <div className="admin-sidebar-logo grad-text">
-          <Gavel size={28} />
-          <span>ADMIN COURT</span>
+    <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
+      {/* Mobile Toggle */}
+      <button 
+        className="btn btn-glass mobile-sidebar-toggle"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1100, width: '56px', height: '56px', borderRadius: '50%', background: 'var(--accent)', color: '#000', border: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} style={{ 
+        width: '280px', background: '#000', borderRight: '1px solid #222', 
+        display: 'flex', flexDirection: 'column', position: 'sticky', 
+        top: 0, height: '100vh', zIndex: 1000 
+      }}>
+        <div style={{ padding: '40px 24px', borderBottom: '1px solid #111' }}>
+          <img src="/assets/logo.png" alt="Admin" style={{ height: '40px', marginBottom: '16px' }} />
+          <h2 className="font-serif" style={{ fontSize: '0.9rem', letterSpacing: '4px', color: 'var(--accent)', textTransform: 'uppercase' }}>Oversight Protocol</h2>
         </div>
-        <nav className="admin-nav">
-          <button className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+
+        <nav className="admin-nav" style={{ padding: '24px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <button className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => { setActiveTab('overview'); setSidebarOpen(false); }}>
             <BarChart2 size={20} /> <span>Analytics</span>
           </button>
-          <button className={`admin-nav-item ${activeTab === 'cases' ? 'active' : ''}`} onClick={() => setActiveTab('cases')}>
+          <button className={`admin-nav-item ${activeTab === 'cases' ? 'active' : ''}`} onClick={() => { setActiveTab('cases'); setSidebarOpen(false); }}>
             <Gavel size={20} /> <span>Case Files</span>
           </button>
-          <button className={`admin-nav-item ${activeTab === 'domains' ? 'active' : ''}`} onClick={() => setActiveTab('domains')}>
+          <button className={`admin-nav-item ${activeTab === 'domains' ? 'active' : ''}`} onClick={() => { setActiveTab('domains'); setSidebarOpen(false); }}>
             <Layers size={20} /> <span>Domains</span>
           </button>
-          <button className={`admin-nav-item ${activeTab === 'create-admin' ? 'active' : ''}`} onClick={() => setActiveTab('create-admin')}>
+          <button className={`admin-nav-item ${activeTab === 'create-admin' ? 'active' : ''}`} onClick={() => { setActiveTab('create-admin'); setSidebarOpen(false); }}>
             <PlusCircle size={20} /> <span>Operators</span>
           </button>
           
@@ -796,22 +820,24 @@ const HomePage = ({ user, onLogout, showToast }) => {
   return (
     <div className="layout-container">
       <nav className="top-nav">
-        <div className="nav-logo grad-text font-serif" onClick={() => setPage('home')} style={{ cursor: 'pointer' }}>
-          <Gavel size={32} /> <span>INTERNET COURT</span>
+        <div className="nav-logo" onClick={() => setSelectedCase(null)} style={{ cursor: 'pointer' }}>
+          <img src="/assets/logo.png" alt="Internet Court" className="logo-img" />
         </div>
         <div className="nav-actions">
-          <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
-            {user?.is_guest ? <Shield size={14} /> : <UserCheck size={14} />} <span>{user?.username}</span>
-          </div>
-          {!user?.is_guest && (
+          <button id="nav-feedback" className="btn btn-glass icon-btn" onClick={() => setModalType('feedback')} title="Send Feedback">
+            <MessageCircle size={20} />
+          </button>
+          <div className="nav-divider" />
+          {user && (
             <button id="nav-case" className="btn btn-primary" onClick={() => setModalType('submit')}>
-              <PlusCircle size={18} /> <span>Submit Case</span>
+              <PlusCircle size={20} /> <span>SUBMIT DOCKET</span>
             </button>
           )}
-          <button id="nav-feedback" className="btn btn-glass" onClick={() => setModalType('feedback')}>
-            Feedback
-          </button>
-          <button id="nav-logout" className="btn btn-glass icon-btn" onClick={onLogout}>
+          <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
+            {user?.is_guest ? <Shield size={18} /> : <UserCheck size={18} />} 
+            <span>{user?.username.toUpperCase()}</span>
+          </div>
+          <button id="nav-logout" className="btn btn-glass icon-btn" onClick={onLogout} title="Log Out">
             <LogOut size={20} color="var(--danger)" />
           </button>
         </div>
@@ -821,7 +847,7 @@ const HomePage = ({ user, onLogout, showToast }) => {
         <div className="feed-layout">
           <section className={`feed-list-section ${selectedCase ? 'with-detail' : ''}`}>
             <header className="feed-header">
-              <h2 className="feed-title grad-text">Public Docket</h2>
+              <h2 className="feed-title" style={{ color: '#fff', fontSize: '2.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px' }}>Public Docket</h2>
               <span className="feed-count">{cases.length} UNRESOLVED CASEFILES</span>
             </header>
 
@@ -849,13 +875,15 @@ const HomePage = ({ user, onLogout, showToast }) => {
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
-                className="detail-panel glass"
-                style={{ flex: 1, position: 'sticky', top: '120px', height: 'calc(100vh - 160px)', borderRadius: '24px', padding: '40px', overflowY: 'auto' }}
+                className="detail-panel"
+                style={{ flex: 1, position: 'sticky', top: '120px', height: 'calc(100vh - 160px)', borderRadius: '2px', padding: '0', overflowY: 'auto', border: 'none' }}
               >
-                <button onClick={() => setSelectedCase(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)' }}>
-                  <X size={24} />
-                </button>
-                <CaseDetail item={selectedCase} user={user} showToast={showToast} onRefresh={() => { fetchContent(true); }} />
+                <div style={{ position: 'relative', height: '100%' }}>
+                  <button onClick={() => setSelectedCase(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', color: '#000', borderRadius: '50%', padding: '8px', zIndex: 100 }}>
+                    <X size={24} />
+                  </button>
+                  <CaseDetail item={selectedCase} user={user} showToast={showToast} onRefresh={() => { fetchContent(true); }} />
+                </div>
               </motion.section>
             )}
           </AnimatePresence>
@@ -961,74 +989,54 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
   const total = item.total_votes || 0;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '12px' }}>
-        <Sparkles size={14} /> {item.category?.name}
+    <div className="paper-card" style={{ padding: '48px', minHeight: '100%', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <span className="case-tag">{item.category?.name || 'PUBLIC DOCKET'}</span>
+        <span className="case-id">ARCHIVE REF: #{item.id}</span>
       </div>
-      <h1 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '24px', lineHeight: 1.1 }}>{item.title_hook}</h1>
+      
+      <h1 style={{ fontSize: '3.5rem', marginBottom: '32px', color: '#1a1a1a', lineHeight: 1 }}>{item.title_hook}</h1>
 
-      <div className="glass-bright" style={{ padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
-        <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{item.full_story}</p>
+      <div style={{ padding: '32px 0', borderTop: '1px solid rgba(0,0,0,0.1)', borderBottom: '1px solid rgba(0,0,0,0.1)', marginBottom: '48px' }}>
+        <p className="full-story" style={{ color: '#222', fontSize: '1.25rem' }}>{item.full_story}</p>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '32px' }}>
-        {hasActuallyVoted || user?.is_guest ? (
-          <div className="glass-bright" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center' }}>
-            {user?.is_guest ? (
-              <>
-                <EyeOff size={48} color="var(--text-dim)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>SPECTATOR PROTOCOL</h3>
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>You are currently viewing this case as a bystander. Sign in to weigh your verdict and Influence the court.</p>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>VERDICT SECURED</h3>
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>Your contribution to digital justice has been logged. Thank you for your service, juror.</p>
-              </>
-            )}
+      <div className="verdict-section">
+        {hasActuallyVoted ? (
+          <div style={{ padding: '40px', background: 'rgba(0,0,0,0.03)', border: '2px dashed rgba(0,0,0,0.1)', textAlign: 'center' }}>
+            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px', color: '#1a1a1a' }}>VERDICT SEALED</h3>
+            <p style={{ color: '#444', fontSize: '1rem' }}>Your contribution to digital justice has been recorded. Thank you for your service, juror.</p>
           </div>
         ) : (
           <>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Gavel color="var(--accent)" /> CAST YOUR VERDICT
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1a1a1a', textTransform: 'uppercase' }}>
+              <Scale size={24} /> Submit Final Verdict
             </h3>
-            <div className="vote-btn-grid">
-              <button className="btn btn-glass vote-btn" onClick={() => handleVote('guilty')} style={{ border: '1px solid var(--danger)' }}>
-                <ThumbsUp size={32} color="var(--danger)" />
-                <span className="vote-btn-label">GUILTY</span>
-              </button>
-              <button className="btn btn-glass vote-btn" onClick={() => handleVote('esh')} style={{ border: '1px solid var(--warning)' }}>
-                <MessageCircle size={32} color="var(--warning)" />
-                <span className="vote-btn-label">ESH</span>
-              </button>
-              <button className="btn btn-glass vote-btn" onClick={() => handleVote('not_guilty')} style={{ border: '1px solid var(--success)' }}>
-                <ThumbsDown size={32} color="var(--success)" />
-                <span className="vote-btn-label">NOT GUILTY</span>
-              </button>
+            <div className="vote-btn-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ background: '#1a1a1a', color: '#fff', padding: '20px' }}>GUILTY</button>
+              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ background: '#444', color: '#fff', padding: '20px' }}>ESH</button>
+              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ background: '#888', color: '#fff', padding: '20px' }}>NOT GUILTY</button>
             </div>
           </>
         )}
 
-        <div style={{ marginTop: '40px' }}>
-          <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '12px' }}>
-            LIVE ADJUDICATION STATS {total === 0 && '(Awaiting First Verdict)'}
-          </p>
-          <div className="vote-bar-track" style={{ height: '12px' }}>
-            <div className="vote-bar-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '0%' }} />
-            <div className="vote-bar-esh" style={{ width: total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%' }} />
-            <div className="vote-bar-not-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '0%' }} />
+        <div style={{ marginTop: '60px' }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1a1a1a' }}>LIVE ADJUDICATION DATA</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#444' }}>{total} TOTAL VERDICTS</span>
+          </header>
+          
+          <div className="vote-bar-track">
+            <div className="vote-bar-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '0%', background: '#b91c1c' }} />
+            <div className="vote-bar-esh" style={{ width: total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%', background: '#a16207' }} />
+            <div className="vote-bar-not-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '0%', background: '#15803d' }} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
-            <span style={{ color: 'var(--danger)', fontWeight: 700 }}>
-              {total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0}% Guilty ({item.votes_guilty})
-            </span>
-            <span style={{ color: 'var(--warning)', fontWeight: 700 }}>
-              {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}% ESH ({item.votes_esh})
-            </span>
-            <span style={{ color: 'var(--success)', fontWeight: 700 }}>
-              {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}% Not Guilty ({item.votes_not_guilty})
-            </span>
+          
+          <div className="vote-stats-row" style={{ color: '#1a1a1a' }}>
+            <span>GUILTY {total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0}%</span>
+            <span>ESH {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}%</span>
+            <span>NOT GUILTY {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}%</span>
           </div>
         </div>
       </div>
@@ -1098,9 +1106,9 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
   };
 
   return (
-    <motion.div {...fadeIn} className="modal-backdrop" onClick={onClose} style={{ zIndex: 2000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }}>
-      <motion.div {...slideUp} className="glass" style={{ width: '100%', maxWidth: '600px', padding: '48px', borderRadius: '24px', position: 'relative' }} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
+    <motion.div {...fadeIn} className="modal-backdrop" onClick={onClose}>
+      <motion.div {...slideUp} className="glass modal-content" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="modal-close-btn">
           <X size={24} />
         </button>
 
