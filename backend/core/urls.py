@@ -6,8 +6,8 @@ from apps.votes.views import VoteViewSet
 from apps.feedback.views import FeedbackViewSet
 
 router = routers.DefaultRouter()
-router.register(r'cases', CaseViewSet)
-router.register(r'categories', CategoryViewSet)
+router.register(r'cases', CaseViewSet, basename='case')
+router.register(r'categories', CategoryViewSet, basename='category')
 router.register(r'votes', VoteViewSet)
 router.register(r'feedback', FeedbackViewSet)
 
