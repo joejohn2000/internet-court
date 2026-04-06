@@ -67,14 +67,12 @@ class CaseSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request:
             return False
-        # Try session-based user first
-        if request.user and request.user.is_authenticated:
-            return obj.votes.filter(voter=request.user).exists()
-        # Fallback: X-User-Id header
-        user_id = request.headers.get('X-User-Id') or request.META.get('HTTP_X_USER_ID')
-        if user_id:
-            try:
-                return obj.votes.filter(voter_id=int(user_id)).exists()
-            except (ValueError, TypeError):
-                pass
-        return False
+            
+        # Get client IP
+        x_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_for:
+            ip = x_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+
+        return obj.votes.filter(ip_address=ip).exists()

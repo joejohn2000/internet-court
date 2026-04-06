@@ -5,12 +5,19 @@ from .models import Vote
 from .serializers import VoteSerializer
 
 
+def get_client_ip(request):
+    """Detects the real IP address of the client."""
+    x_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_for:
+        return x_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
 def _get_voter(request):
-    """Identify the voter: session user first, then X-User-Id header fallback."""
+    """Identify the voter account if logged in (optional)."""
     if request.user and request.user.is_authenticated:
         return request.user
     
-    # Fallback to header-based identification (used in some cross-origin scenarios)
     user_id = request.headers.get('X-User-Id') or request.META.get('HTTP_X_USER_ID')
     if user_id:
         try:
@@ -43,23 +50,20 @@ class VoteViewSet(mixins.CreateModelMixin,
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        ip = get_client_ip(request)
         voter = _get_voter(request)
-        if not voter:
-            return Response(
-                {'error': 'You must be logged in to vote.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
-        # PREVENT DUPLICATE VOTES — one vote per user per case
-        if Vote.objects.filter(case_id=case_id, voter=voter).exists():
+        # PREVENT DUPLICATE VOTES — one vote per system (IP) per case
+        if Vote.objects.filter(case_id=case_id, ip_address=ip).exists():
             return Response(
-                {'error': 'You have already voiced your verdict on this case.'},
+                {'error': 'Your system has already voiced a verdict on this case.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         vote = Vote.objects.create(
             case_id=case_id,
             voter=voter,
+            ip_address=ip,
             decision=decision,
         )
         serializer = self.get_serializer(vote)
