@@ -40,6 +40,13 @@ class VoteViewSet(mixins.CreateModelMixin,
     serializer_class = VoteSerializer
     permission_classes = [permissions.AllowAny]
 
+    def get_queryset(self):
+        qs = Vote.objects.all().order_by('-created_at')
+        user_id = self.request.query_params.get('user_id')
+        if user_id:
+            qs = qs.filter(voter_id=user_id)
+        return qs
+
     def create(self, request, *args, **kwargs):
         case_id = request.data.get('case')
         decision = request.data.get('decision')

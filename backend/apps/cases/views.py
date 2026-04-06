@@ -40,6 +40,10 @@ class CaseViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
+        author_id = self.request.query_params.get('author_id')
+        if author_id:
+            queryset = queryset.filter(author_id=author_id)
+
         return queryset
 
     def get_permissions(self):
