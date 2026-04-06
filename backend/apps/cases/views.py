@@ -49,29 +49,26 @@ class CaseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         from django.contrib.auth import get_user_model
-        User = get_user_model()
+        # Detect IP
+        x_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_for:
+            ip = x_for.split(',')[0].strip()
+        else:
+            ip = self.request.META.get('REMOTE_ADDR')
 
-        # Support anonymous submission: use a fallback "Anonymous" system user
+        # Identify User (optional)
+        author = None
         if self.request.user and self.request.user.is_authenticated:
             author = self.request.user
         else:
-            # Get or create an anonymous system user
-            author, _ = User.objects.get_or_create(
-                username='anonymous',
-                defaults={'email': '', 'is_active': True}
-            )
-        
-        # Override the username display if submitter provided a name
-        submitter_name = self.request.data.get('author_name', '').strip()
-        if submitter_name:
-            # Get or create a user with that display name
-            display_user, _ = User.objects.get_or_create(
-                username=submitter_name,
-                defaults={'email': '', 'is_active': True}
-            )
-            author = display_user
+            user_id = self.request.headers.get('X-User-Id') or self.request.META.get('HTTP_X_USER_ID')
+            if user_id:
+                try:
+                    author = get_user_model().objects.get(id=int(user_id))
+                except (ValueError, TypeError, get_user_model().DoesNotExist):
+                    pass
 
-        serializer.save(author=author)
+        serializer.save(author=author, ip_address=ip)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):

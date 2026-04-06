@@ -18,8 +18,9 @@ class Case(models.Model):
         ('closed', 'Verdict Reached'),
     ]
 
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cases')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cases', null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    ip_address = models.GenericIPAddressField(db_index=True)
     
     title_hook = models.CharField(max_length=255, help_text="The hook to capture attention")
     ai_suggested_hook = models.CharField(max_length=255, blank=True, null=True)
