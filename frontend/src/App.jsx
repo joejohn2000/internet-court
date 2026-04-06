@@ -767,7 +767,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
 /* ═══════════════════════════════════════════════════════════
    HOME PAGE
    ═══════════════════════════════════════════════════════════ */
-const HomePage = ({ user, onLogout, showToast }) => {
+const HomePage = ({ user, onLogout, showToast, setPage }) => {
   const [cases, setCases] = useState([]);
   const [cats, setCats] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -1273,17 +1273,53 @@ const HistoryPage = ({ user, onBack, showToast }) => {
           <div style={{ display: 'grid', gap: '32px' }}>
             {filtered.map(r => (
               <div key={r.type + r.id} className="glass" style={{ padding: '32px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 800, background: r.type === 'case' ? 'var(--accent)' : 'var(--ink-black)', color: r.type === 'case' ? '#000' : '#fff', padding: '4px 12px', borderRadius: '4px' }}>
                     {r.type.toUpperCase()}
                   </span>
-                  <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {r.type === 'vote' && (
+                       <span style={{ fontSize: '0.85rem', fontWeight: 900, background: '#fff', color: '#000', padding: '4px 10px', borderRadius: '4px', border: '1px solid #000', boxShadow: '2px 2px 0 #000' }}>
+                         YOUR VERDICT: {r.decision.toUpperCase().replace('_', ' ')}
+                       </span>
+                    )}
+                    <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
-                  {r.type === 'case' ? r.title_hook : `Voted ${r.decision?.toUpperCase().replace('_', ' ')}`}
+
+                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px', lineHeight: 1.2 }}>
+                  {r.type === 'case' ? r.title_hook : r.case_details?.title_hook}
                 </h3>
-                {r.type === 'vote' && <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>Record Entry: #{r.case}</p>}
-                {r.type === 'case' && <p style={{ opacity: 0.7, fontSize: '0.9rem' }}>{r.full_story.substring(0, 100)}...</p>}
+                
+                <p style={{ opacity: 0.8, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                  {r.type === 'case' ? r.full_story : r.case_details?.full_story}
+                </p>
+
+                {/* CURRENT SCORE SITUATION */}
+                <div style={{ background: 'rgba(0,0,0,0.05)', padding: '20px', borderRadius: '12px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                   {(r.type === 'case' ? r : r.case_details) && (
+                     <>
+                       <div style={{ minWidth: '120px' }}>
+                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Public Verdict</span>
+                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
+                            {Math.round(((r.type === 'case' ? r.votes_guilty : r.case_details.votes_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% GUILTY
+                         </span>
+                       </div>
+                       <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
+                       <div style={{ minWidth: '120px' }}>
+                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Censure Intensity</span>
+                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
+                            {Math.round(((r.type === 'case' ? r.votes_not_guilty : r.case_details.votes_not_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% INNOCENT
+                         </span>
+                       </div>
+                       <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
+                       <div style={{ minWidth: '120px' }}>
+                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Total Jurors</span>
+                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>{r.type === 'case' ? r.total_votes : r.case_details.total_votes} RECORDED</span>
+                       </div>
+                     </>
+                   )}
+                </div>
               </div>
             ))}
           </div>
