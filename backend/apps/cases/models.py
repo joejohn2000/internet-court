@@ -41,3 +41,13 @@ class Case(models.Model):
 
     def __str__(self):
         return f"Case #{self.id} - {self.title_hook[:20]}"
+
+class Comment(models.Model):
+    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        a = self.author.username if self.author else "Anonymous"
+        return f"Comment by {a} on Case #{self.case_id}"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Case, Category
+from .models import Case, Category, Comment
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -21,12 +21,27 @@ class CategorySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class CommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'case', 'author_name', 'content', 'created_at']
+        read_only_fields = ['author_name', 'created_at']
+
+    def get_author_name(self, obj):
+        if obj.author:
+            return obj.author.username
+        return 'Anonymous'
+
+
 class CaseSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
     )
     author_name = serializers.SerializerMethodField(read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     # Vote counts
     votes_guilty = serializers.SerializerMethodField()
@@ -42,7 +57,7 @@ class CaseSerializer(serializers.ModelSerializer):
             'title_hook', 'ai_suggested_hook', 'full_story',
             'status', 'verdict_timer_ends', 'created_at',
             'votes_guilty', 'votes_not_guilty', 'votes_esh', 
-            'total_votes', 'user_has_voted',
+            'total_votes', 'user_has_voted', 'comments',
         ]
         read_only_fields = ['status', 'verdict_timer_ends', 'ai_suggested_hook']
 

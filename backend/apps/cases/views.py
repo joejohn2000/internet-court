@@ -1,8 +1,8 @@
 from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Case, Category
-from .serializers import CaseSerializer, CategorySerializer
+from .models import Case, Category, Comment
+from .serializers import CaseSerializer, CategorySerializer, CommentSerializer
 
 
 class CategoryViewSet(mixins.CreateModelMixin,
@@ -80,3 +80,23 @@ class CaseViewSet(viewsets.ModelViewSet):
         case.ai_suggested_hook = f"Improved: {case.title_hook} (AI Enhanced)"
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def perform_create(self, serializer):
+        from django.contrib.auth import get_user_model
+        author = None
+        if self.request.user and self.request.user.is_authenticated:
+            author = self.request.user
+        else:
+            user_id = self.request.headers.get('X-User-Id') or self.request.META.get('HTTP_X_USER_ID')
+            if user_id:
+                try:
+                    author = get_user_model().objects.get(id=int(user_id))
+                except (ValueError, TypeError, get_user_model().DoesNotExist):
+                    pass
+        serializer.save(author=author)
