@@ -1065,7 +1065,7 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
       </h3>
 
       <div style={{ display: 'grid', gap: '24px', marginBottom: '60px' }}>
-        {comments?.length === 0 ? (
+        {(!comments || comments.length === 0) ? (
           <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)', textAlign: 'center', color: '#666' }}>
              No deliberations yet. Be the first to provide testimony.
           </div>
