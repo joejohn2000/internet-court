@@ -637,3 +637,66 @@ x ── */ .glass table {
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.2);
 }
+
+/* ── Comment Section ── */
+.comment-section {
+  font-family: 'Inter', sans-serif;
+}
+
+.comment-bubble {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 4px solid var(--accent);
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.comment-bubble:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateX(4px);
+}
+
+.comment-metadata {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.juror-name {
+  color: var(--accent);
+}
+
+.comment-date {
+  color: #888;
+}
+
+.comment-content {
+  color: #333;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.comment-form textarea {
+  background: #fdfdfd;
+  border: 2px solid #ddd;
+  border-left: 6px solid #000;
+  border-radius: 0;
+  padding: 24px;
+  font-size: 1.1rem;
+  font-family: 'Inter', sans-serif;
+  color: #000;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.comment-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}

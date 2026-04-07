@@ -338,7 +338,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
       if (caseFilters.name) params.append('name', caseFilters.name);
       if (caseFilters.status) params.append('status', caseFilters.status);
       if (caseFilters.category) params.append('category', caseFilters.category);
-      
+
       const res = await axios.get(`${API}/cases/?${params.toString()}`);
       setAdminCases(Array.isArray(res.data) ? res.data : res.data.results || []);
     } catch (err) { console.error(err); }
@@ -391,7 +391,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
   return (
     <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
       {/* Mobile Toggle */}
-      <button 
+      <button
         className="btn btn-glass mobile-sidebar-toggle"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1100, width: '56px', height: '56px', borderRadius: '50%', background: 'var(--accent)', color: '#000', border: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
@@ -399,10 +399,10 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} style={{ 
-        width: '280px', background: '#000', borderRight: '1px solid #222', 
-        display: 'flex', flexDirection: 'column', position: 'sticky', 
-        top: 0, height: '100vh', zIndex: 1000 
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} style={{
+        width: '280px', background: '#000', borderRight: '1px solid #222',
+        display: 'flex', flexDirection: 'column', position: 'sticky',
+        top: 0, height: '100vh', zIndex: 1000
       }}>
         <div style={{ padding: '40px 24px', borderBottom: '1px solid #111' }}>
           <img src="/assets/logo.png" alt="Admin" style={{ height: '40px', marginBottom: '16px' }} />
@@ -422,9 +422,9 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
           <button className={`admin-nav-item ${activeTab === 'create-admin' ? 'active' : ''}`} onClick={() => { setActiveTab('create-admin'); setSidebarOpen(false); }}>
             <PlusCircle size={20} /> <span>Operators</span>
           </button>
-          
+
           <div className="admin-nav-spacer" style={{ marginTop: 'auto' }} />
-          
+
           <div className="admin-sidebar-footer">
             <div className="nav-user-chip" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--border-subtle)', color: 'white' }}>
               <Shield size={14} color="var(--secondary)" /> <span>{user?.username}</span>
@@ -494,8 +494,8 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                           <td style={{ padding: '16px', fontWeight: 700 }}>{u.username}</td>
                           <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{u.email || 'N/A'}</td>
                           <td style={{ padding: '16px' }}>
-                            <span style={{ 
-                              padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', 
+                            <span style={{
+                              padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem',
                               background: u.is_admin ? 'var(--accent-muted)' : 'rgba(255,255,255,0.03)',
                               color: u.is_admin ? 'var(--accent)' : 'var(--text-dim)',
                               border: `1px solid ${u.is_admin ? 'var(--accent)' : 'transparent'}`
@@ -540,10 +540,10 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>SEARCH BY NAME/HOOK</label>
                   <div style={{ position: 'relative' }}>
                     <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                    <input 
-                      className="form-input" 
-                      style={{ paddingLeft: '40px' }} 
-                      placeholder="Enter citizen name or case hook..." 
+                    <input
+                      className="form-input"
+                      style={{ paddingLeft: '40px' }}
+                      placeholder="Enter citizen name or case hook..."
                       value={caseFilters.name}
                       onChange={e => setCaseFilters(f => ({ ...f, name: e.target.value }))}
                     />
@@ -551,7 +551,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                 </div>
                 <div style={{ width: '180px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>VOTE STATUS</label>
-                  <select 
+                  <select
                     className="form-input"
                     value={caseFilters.status}
                     onChange={e => setCaseFilters(f => ({ ...f, status: e.target.value }))}
@@ -563,7 +563,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                 </div>
                 <div style={{ width: '180px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', marginBottom: '8px', display: 'block' }}>DOMAIN</label>
-                  <select 
+                  <select
                     className="form-input"
                     value={caseFilters.category}
                     onChange={e => setCaseFilters(f => ({ ...f, category: e.target.value }))}
@@ -612,7 +612,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>Total: {c.total_votes}</div>
                           </td>
                           <td style={{ padding: '16px' }}>
-                            <span style={{ 
+                            <span style={{
                               padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 800,
                               background: c.status === 'open' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
                               color: c.status === 'open' ? '#10b981' : '#f43f5e'
@@ -638,13 +638,13 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
               </div>
 
               {editingCase && (
-                <Modal 
-                  type="edit-case" 
-                  item={editingCase} 
+                <Modal
+                  type="edit-case"
+                  item={editingCase}
                   cats={[]} // Category fetching can be added if needed, or pass from parent
-                  onClose={() => setEditingCase(null)} 
-                  onSuccess={() => { setEditingCase(null); fetchCases(); }} 
-                  showToast={showToast} 
+                  onClose={() => setEditingCase(null)}
+                  onSuccess={() => { setEditingCase(null); fetchCases(); }}
+                  showToast={showToast}
                 />
               )}
             </motion.div>
@@ -690,17 +690,17 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
               </div>
 
               {(isCreatingDomain || editingDomain) && (
-                <Modal 
-                  type={isCreatingDomain ? "create-domain" : "edit-domain"} 
-                  item={editingDomain} 
-                  onClose={() => { setIsCreatingDomain(false); setEditingDomain(null); }} 
+                <Modal
+                  type={isCreatingDomain ? "create-domain" : "edit-domain"}
+                  item={editingDomain}
+                  onClose={() => { setIsCreatingDomain(false); setEditingDomain(null); }}
                   onSuccess={async () => {
                     setIsCreatingDomain(false);
                     setEditingDomain(null);
                     const cRes = await axios.get(`${API}/categories/`);
                     setAdminCats(Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []);
-                  }} 
-                  showToast={showToast} 
+                  }}
+                  showToast={showToast}
                 />
               )}
             </motion.div>
@@ -751,7 +751,7 @@ const AdminDashboard = ({ user, onLogout, showToast }) => {
                       </button>
                     </div>
                   </div>
-                   <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
+                  <button id="create-admin-btn" type="submit" className="btn btn-primary" disabled={creating} style={{ width: '100%' }}>
                     {creating ? 'Processing...' : 'Authorize Personnel'}
                   </button>
                 </form>
@@ -821,7 +821,7 @@ const HomePage = ({ user, onLogout, showToast, setPage }) => {
             </button>
           )}
           <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
-            {user?.is_guest ? <Shield size={18} /> : <UserCheck size={18} />} 
+            {user?.is_guest ? <Shield size={18} /> : <UserCheck size={18} />}
             <span>{user?.username.toUpperCase()}</span>
           </div>
           <button id="nav-logout" className="btn btn-glass icon-btn" onClick={onLogout} title="Log Out">
@@ -981,7 +981,7 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
         <span className="case-tag">{item.category?.name || 'PUBLIC DOCKET'}</span>
         <span className="case-id">ARCHIVE REF: #{item.id}</span>
       </div>
-      
+
       <h1 style={{ fontSize: '3.5rem', marginBottom: '32px', color: '#1a1a1a', lineHeight: 1 }}>{item.title_hook}</h1>
 
       <div style={{ padding: '32px 0', borderTop: '1px solid rgba(0,0,0,0.1)', borderBottom: '1px solid rgba(0,0,0,0.1)', marginBottom: '48px' }}>
@@ -1002,7 +1002,7 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
             </h3>
             <div className="vote-btn-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
               <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ background: '#1a1a1a', color: '#fff', padding: '20px' }}>GUILTY</button>
-              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ background: '#444', color: '#fff', padding: '20px' }}>ESH</button>
+              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ background: '#444', color: '#fff', padding: '20px' }}>NEUTRAL</button>
               <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ background: '#888', color: '#fff', padding: '20px' }}>NOT GUILTY</button>
             </div>
           </>
@@ -1013,36 +1013,111 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
             <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1a1a1a' }}>LIVE ADJUDICATION DATA</span>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#444' }}>{total} TOTAL VERDICTS</span>
           </header>
-          
+
           <div className="vote-bar-track">
             <div className="vote-bar-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '0%', background: '#b91c1c' }} />
             <div className="vote-bar-esh" style={{ width: total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%', background: '#a16207' }} />
             <div className="vote-bar-not-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '0%', background: '#15803d' }} />
           </div>
-          
+
           <div className="vote-stats-row" style={{ color: '#1a1a1a' }}>
             <span>GUILTY {total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0}%</span>
-            <span>ESH {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}%</span>
+            <span>NEUTRAL {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}%</span>
             <span>NOT GUILTY {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}%</span>
           </div>
         </div>
       </div>
+
+      <CommentSection 
+        caseId={item.id} 
+        comments={item.comments} 
+        showToast={showToast} 
+        onRefresh={onRefresh} 
+      />
     </div>
   );
 };
 
+/* ── CommentSection ── */
+const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
+  const [content, setContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+    setSubmitting(true);
+    try {
+      await axios.post(`${API}/comments/`, { case: caseId, content });
+      setContent('');
+      showToast('Comment appended to casefile.');
+      onRefresh();
+    } catch (err) {
+      showToast('Failed to post comment.', 'error');
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="comment-section" style={{ marginTop: '80px', paddingTop: '60px', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
+      <h3 className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '32px', color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <MessageCircle size={28} /> Juror Deliberations
+      </h3>
+
+      <div style={{ display: 'grid', gap: '24px', marginBottom: '60px' }}>
+        {comments?.length === 0 ? (
+          <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)', textAlign: 'center', color: '#666' }}>
+             No deliberations yet. Be the first to provide testimony.
+          </div>
+        ) : (
+          comments.map(c => (
+            <div key={c.id} className="comment-bubble">
+              <div className="comment-metadata">
+                <span className="juror-name">FILE JUROR: {c.author_name?.toUpperCase() || 'ANONYMOUS'}</span>
+                <span className="comment-date">{new Date(c.created_at).toLocaleString()}</span>
+              </div>
+              <p className="comment-content">{c.content}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="comment-form">
+        <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Lodge Your Testimony</label>
+        <textarea
+          className="form-input"
+          placeholder="Enter your observations and rationale..."
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          disabled={submitting}
+          rows={4}
+        />
+        <button
+          type="submit"
+          className="btn btn-primary"
+          style={{ marginTop: '16px', width: '100%', padding: '20px', fontSize: '1.1rem' }}
+          disabled={submitting || !content.trim()}
+        >
+          {submitting ? 'APPENDING...' : 'APPEND TESTIMONY TO RECORD'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+
 /* ── Modal ── */
 const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
-  const [form, setForm] = useState({ 
-    hook: item?.title_hook || '', 
-    story: item?.full_story || '', 
-    category: item?.category?.name || item?.name || '', 
-    author_name: item?.author_name || '', 
+  const [form, setForm] = useState({
+    hook: item?.title_hook || '',
+    story: item?.full_story || '',
+    category: item?.category?.name || item?.name || '',
+    author_name: item?.author_name || '',
     status: item?.status || 'open',
     slug: item?.slug || '',
-    feedback_type: 'other', 
-    message: '', 
-    email: '' 
+    feedback_type: 'other',
+    message: '',
+    email: ''
   });
   const [anon, setAnon] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -1108,21 +1183,21 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
             <div style={{ display: 'grid', gap: '20px' }}>
               <div className="field-group">
                 <label>Domain Identity</label>
-                <input 
-                  className="form-input" 
-                  placeholder="e.g. Workplace" 
-                  value={form.category} 
-                  onChange={e => setForm({ ...form, category: e.target.value })} 
-                  required 
+                <input
+                  className="form-input"
+                  placeholder="e.g. Workplace"
+                  value={form.category}
+                  onChange={e => setForm({ ...form, category: e.target.value })}
+                  required
                 />
               </div>
               <div className="field-group">
                 <label>System Slug</label>
-                <input 
-                  className="form-input" 
-                  placeholder="e.g. workplace-politics" 
-                  value={form.slug} 
-                  onChange={e => setForm({ ...form, slug: e.target.value })} 
+                <input
+                  className="form-input"
+                  placeholder="e.g. workplace-politics"
+                  value={form.slug}
+                  onChange={e => setForm({ ...form, slug: e.target.value })}
                 />
               </div>
             </div>
@@ -1221,11 +1296,11 @@ const HistoryPage = ({ user, onBack, showToast }) => {
           axios.get(`${API}/cases/?author_id=${user.id}`),
           axios.get(`${API}/votes/?user_id=${user.id}`)
         ]);
-        
+
         const cases = (Array.isArray(cRes.data) ? cRes.data : cRes.data.results || []).map(c => ({ ...c, type: 'case' }));
         const votes = (Array.isArray(vRes.data) ? vRes.data : vRes.data.results || []).map(v => ({ ...v, type: 'vote' }));
-        
-        setRecords([...cases, ...votes].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)));
+
+        setRecords([...cases, ...votes].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } catch (err) { showToast("Protocol failed to retrieve history.", "error"); }
       setLoading(false);
     };
@@ -1242,9 +1317,9 @@ const HistoryPage = ({ user, onBack, showToast }) => {
           <span style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '2px', color: '#000', marginLeft: '12px' }}>ARCHIVAL RECORDS</span>
         </div>
         <div className="nav-actions">
-           <div className="nav-user-chip" style={{ color: '#000', borderColor: 'rgba(0,0,0,0.2)' }}>
-             <UserCheck size={18} /> <span>{user.username.toUpperCase()}</span>
-           </div>
+          <div className="nav-user-chip" style={{ color: '#000', borderColor: 'rgba(0,0,0,0.2)' }}>
+            <UserCheck size={18} /> <span>{user.username.toUpperCase()}</span>
+          </div>
         </div>
       </nav>
 
@@ -1253,7 +1328,7 @@ const HistoryPage = ({ user, onBack, showToast }) => {
           <h1 className="font-serif" style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px' }}>Personal Logs</h1>
           <div style={{ display: 'flex', gap: '12px' }}>
             {['all', 'cases', 'votes'].map(f => (
-              <button 
+              <button
                 key={f}
                 className={`btn ${filter === f ? 'btn-primary' : 'btn-glass'}`}
                 onClick={() => setFilter(f)}
@@ -1279,9 +1354,9 @@ const HistoryPage = ({ user, onBack, showToast }) => {
                   </span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {r.type === 'vote' && (
-                       <span style={{ fontSize: '0.85rem', fontWeight: 900, background: '#fff', color: '#000', padding: '4px 10px', borderRadius: '4px', border: '1px solid #000', boxShadow: '2px 2px 0 #000' }}>
-                         YOUR VERDICT: {r.decision.toUpperCase().replace('_', ' ')}
-                       </span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 900, background: '#fff', color: '#000', padding: '4px 10px', borderRadius: '4px', border: '1px solid #000', boxShadow: '2px 2px 0 #000' }}>
+                        YOUR VERDICT: {r.decision.toUpperCase().replace('_', ' ')}
+                      </span>
                     )}
                     <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(r.created_at).toLocaleDateString()}</span>
                   </div>
@@ -1290,35 +1365,35 @@ const HistoryPage = ({ user, onBack, showToast }) => {
                 <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px', lineHeight: 1.2 }}>
                   {r.type === 'case' ? r.title_hook : r.case_details?.title_hook}
                 </h3>
-                
+
                 <p style={{ opacity: 0.8, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px' }}>
                   {r.type === 'case' ? r.full_story : r.case_details?.full_story}
                 </p>
 
                 {/* CURRENT SCORE SITUATION */}
                 <div style={{ background: 'rgba(0,0,0,0.05)', padding: '20px', borderRadius: '12px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                   {(r.type === 'case' ? r : r.case_details) && (
-                     <>
-                       <div style={{ minWidth: '120px' }}>
-                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Public Verdict</span>
-                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
-                            {Math.round(((r.type === 'case' ? r.votes_guilty : r.case_details.votes_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% GUILTY
-                         </span>
-                       </div>
-                       <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
-                       <div style={{ minWidth: '120px' }}>
-                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Censure Intensity</span>
-                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
-                            {Math.round(((r.type === 'case' ? r.votes_not_guilty : r.case_details.votes_not_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% INNOCENT
-                         </span>
-                       </div>
-                       <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
-                       <div style={{ minWidth: '120px' }}>
-                         <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Total Jurors</span>
-                         <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>{r.type === 'case' ? r.total_votes : r.case_details.total_votes} RECORDED</span>
-                       </div>
-                     </>
-                   )}
+                  {(r.type === 'case' ? r : r.case_details) && (
+                    <>
+                      <div style={{ minWidth: '120px' }}>
+                        <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Public Verdict</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
+                          {Math.round(((r.type === 'case' ? r.votes_guilty : r.case_details.votes_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% GUILTY
+                        </span>
+                      </div>
+                      <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
+                      <div style={{ minWidth: '120px' }}>
+                        <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Censure Intensity</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>
+                          {Math.round(((r.type === 'case' ? r.votes_not_guilty : r.case_details.votes_not_guilty) / (r.type === 'case' ? r.total_votes : r.case_details.total_votes) || 0) * 100)}% INNOCENT
+                        </span>
+                      </div>
+                      <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)' }} className="hide-mobile" />
+                      <div style={{ minWidth: '120px' }}>
+                        <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>Total Jurors</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>{r.type === 'case' ? r.total_votes : r.case_details.total_votes} RECORDED</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
