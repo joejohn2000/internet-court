@@ -176,10 +176,10 @@ const Landing = ({ onGoLogin, onGuest }) => (
       className="hero-actions"
     >
       <button id="landing-login" className="btn btn-primary hero-btn" onClick={onGoLogin}>
-        <Shield size={24} /> Enter the Court
+        <Shield size={24} /><span>Enter Court</span>
       </button>
       <button id="landing-guest" className="btn btn-glass hero-btn" onClick={onGuest}>
-        <Eye size={24} /> Spectate
+        <Eye size={24} /><span>Spectate</span>
       </button>
     </motion.div>
   </motion.div>
@@ -257,7 +257,7 @@ const AuthPageBase = ({ idPrefix, title, sub, icon, submitText, onAuth, onBack, 
               </button>
             </div>
           </div>
-          <button id={`${idPrefix}-submit`} className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', padding: '16px', marginBottom: '24px' }}>
+          <button id={`${idPrefix}-submit`} className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', padding: '16px', minHeight: '56px', marginBottom: '24px' }}>
             {loading ? 'Processing...' : submitText}
           </button>
         </form>
@@ -773,6 +773,7 @@ const HomePage = ({ user, onLogout, showToast, setPage }) => {
   const [selectedCase, setSelectedCase] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchContent = useCallback(async (syncSelection = false) => {
     try {
@@ -805,27 +806,38 @@ const HomePage = ({ user, onLogout, showToast, setPage }) => {
         <div className="nav-logo" onClick={() => setSelectedCase(null)} style={{ cursor: 'pointer' }}>
           <img src="/assets/logo.png" alt="Internet Court" className="logo-img" />
         </div>
-        <div className="nav-actions">
-          <button id="nav-feedback" className="btn btn-glass icon-btn" onClick={() => setModalType('feedback')} title="Send Feedback">
-            <MessageCircle size={20} />
-          </button>
-          {!user?.is_guest && (
-            <button id="nav-history" className="btn btn-glass icon-btn" onClick={() => setPage('history')} title="View My Records">
-              <History size={20} />
-            </button>
-          )}
-          <div className="nav-divider" />
+
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+
+        <div className={`nav-actions ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+
+
+
           {user && (
-            <button id="nav-case" className="btn btn-primary" onClick={() => setModalType('submit')}>
-              <PlusCircle size={20} /> <span>SUBMIT DOCKET</span>
+            <button id="nav-case" className="btn btn-primary" onClick={() => { setModalType('submit'); setMobileMenuOpen(false); }}>
+              <PlusCircle size={24} /> <span>SUBMIT DOCKET</span>
             </button>
           )}
+          {!user?.is_guest && (
+            <button id="nav-history" className="btn btn-glass icon-btn" onClick={() => { setPage('history'); setMobileMenuOpen(false); }} title="View My Records">
+              <History size={24} /> <span className="mobile-text">View Records</span>
+            </button>
+          )}
+
+          <button id="nav-feedback" className="btn btn-glass icon-btn" onClick={() => { setModalType('feedback'); setMobileMenuOpen(false); }} title="Send Feedback">
+            <MessageCircle size={24} /> <span className="mobile-text">Send Feedback</span>
+          </button>
           <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
             {user?.is_guest ? <Shield size={18} /> : <UserCheck size={18} />}
             <span>{user?.username.toUpperCase()}</span>
           </div>
-          <button id="nav-logout" className="btn btn-glass icon-btn" onClick={onLogout} title="Log Out">
-            <LogOut size={20} color="var(--danger)" />
+          <button id="nav-logout" className="btn btn-glass icon-btn" onClick={() => { onLogout(); setMobileMenuOpen(false); }} title="Log Out">
+            <LogOut size={24} color="var(--danger)" /> <span className="mobile-text">Log Out</span>
           </button>
         </div>
       </nav>
@@ -1000,10 +1012,10 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1a1a1a', textTransform: 'uppercase' }}>
               <Scale size={24} /> Submit Final Verdict
             </h3>
-            <div className="vote-btn-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ background: '#1a1a1a', color: '#fff', padding: '20px' }}>GUILTY</button>
-              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ background: '#444', color: '#fff', padding: '20px' }}>NEUTRAL</button>
-              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ background: '#888', color: '#fff', padding: '20px' }}>NOT GUILTY</button>
+            <div className="vote-btn-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ padding: '16px', minHeight: '56px' }}>GUILTY</button>
+              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ padding: '16px', minHeight: '56px' }}>NEUTRAL</button>
+              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ padding: '16px', minHeight: '56px' }}>NOT GUILTY</button>
             </div>
           </>
         )}
@@ -1028,11 +1040,11 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
         </div>
       </div>
 
-      <CommentSection 
-        caseId={item.id} 
-        comments={item.comments} 
-        showToast={showToast} 
-        onRefresh={onRefresh} 
+      <CommentSection
+        caseId={item.id}
+        comments={item.comments}
+        showToast={showToast}
+        onRefresh={onRefresh}
       />
     </div>
   );
@@ -1067,7 +1079,7 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
       <div style={{ display: 'grid', gap: '24px', marginBottom: '60px' }}>
         {(!comments || comments.length === 0) ? (
           <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)', textAlign: 'center', color: '#666' }}>
-             No deliberations yet. Be the first to provide testimony.
+            No deliberations yet. Be the first to provide testimony.
           </div>
         ) : (
           comments.map(c => (
@@ -1090,12 +1102,12 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
           value={content}
           onChange={e => setContent(e.target.value)}
           disabled={submitting}
-          rows={4}
+          style={{ minHeight: '120px' }}
         />
         <button
           type="submit"
           className="btn btn-primary"
-          style={{ marginTop: '16px', width: '100%', padding: '20px', fontSize: '1.1rem' }}
+          style={{ marginTop: '20px', width: '100%', minHeight: '56px', fontSize: '1.1rem' }}
           disabled={submitting || !content.trim()}
         >
           {submitting ? 'APPENDING...' : 'APPEND TESTIMONY TO RECORD'}
