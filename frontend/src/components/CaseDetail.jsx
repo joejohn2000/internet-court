@@ -53,7 +53,7 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
     setAnalysisLoading(true);
     setAnalysisFailed(false);
     try {
-      const res = await axios.post(`${API}/cases/${item.id}/generate-judge-analysis/`);
+      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
       setJudgeAnalysis(res.data.judge_analysis);
       showToast('Judge opinion formulated.');
     } catch (err) {
