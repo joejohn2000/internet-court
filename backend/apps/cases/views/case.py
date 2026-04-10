@@ -67,7 +67,7 @@ class CaseViewSet(viewsets.ModelViewSet):
         case.ai_suggested_hook = f"Improved: {case.title_hook} (AI Enhanced)"
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny], url_path='generate_judge_analysis')
     def generate_judge_analysis(self, request, pk=None):
         case = self.get_object()
         if case.judge_analysis:
