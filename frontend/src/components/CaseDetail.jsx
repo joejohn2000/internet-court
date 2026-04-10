@@ -9,12 +9,14 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
 
   const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisFailed, setAnalysisFailed] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60);
 
   // Reset optimistic flag and analysis state when switching cases
   useEffect(() => {
     setOptimisticVoted(false);
     setJudgeAnalysis(item.judge_analysis || null);
+    setAnalysisFailed(false);
   }, [item]);
 
   useEffect(() => {
@@ -35,26 +37,28 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
         const remaining = tick();
         if (remaining === 0) {
           clearInterval(interval);
-          if (!judgeAnalysis && !analysisLoading) {
+          if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
             triggerJudgeAnalysis();
           }
         }
       }, 1000);
-    } else if (!judgeAnalysis && !analysisLoading) {
+    } else if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
        triggerJudgeAnalysis();
     }
 
     return () => { if (interval) clearInterval(interval); };
-  }, [item.created_at, item.id, judgeAnalysis, analysisLoading]);
+  }, [item.created_at, item.id, judgeAnalysis, analysisLoading, analysisFailed]);
 
   const triggerJudgeAnalysis = async () => {
     setAnalysisLoading(true);
+    setAnalysisFailed(false);
     try {
-      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
+      const res = await axios.post(`${API}/cases/${item.id}/generate-judge-analysis/`);
       setJudgeAnalysis(res.data.judge_analysis);
       showToast('Judge opinion formulated.');
     } catch (err) {
       console.error(err);
+      setAnalysisFailed(true);
     }
     setAnalysisLoading(false);
   };
