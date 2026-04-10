@@ -1,6 +1,8 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.utils import timezone
+from datetime import timedelta
 from apps.cases.models import Case
 from apps.cases.serializers import CaseSerializer
 
@@ -65,3 +67,25 @@ class CaseViewSet(viewsets.ModelViewSet):
         case.ai_suggested_hook = f"Improved: {case.title_hook} (AI Enhanced)"
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    def generate_judge_analysis(self, request, pk=None):
+        case = self.get_object()
+        if case.judge_analysis:
+            return Response({'judge_analysis': case.judge_analysis}, status=status.HTTP_200_OK)
+            
+        time_since_creation = timezone.now() - case.created_at
+        if time_since_creation < timedelta(minutes=1):
+            return Response({'error': 'Judge analysis is still locked.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Generate mock AI analysis
+        analysis = (
+            f"JUDGE OPINION ON DOCKET #{case.id}:\n\n"
+            f"After careful review of the submitted record ('{case.title_hook}'), "
+            "the court finds the sequence of events highly controversial. "
+            "The plaintiff's actions appear to be driven by emotional distress, "
+            "yet the defendant's boundaries must be respected. "
+            "This court advises the jury to proceed with caution and weigh the mitigating circumstances presented in the full story."
+        )
+        case.judge_analysis = analysis
+        case.save()
+        return Response({'judge_analysis': case.judge_analysis}, status=status.HTTP_200_OK)

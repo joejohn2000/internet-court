@@ -23,12 +23,12 @@ class CaseSerializer(serializers.ModelSerializer):
         model = Case
         fields = [
             'id', 'author_name', 'category', 'category_id',
-            'title_hook', 'ai_suggested_hook', 'full_story',
+            'title_hook', 'ai_suggested_hook', 'full_story', 'judge_analysis',
             'status', 'verdict_timer_ends', 'created_at',
             'votes_guilty', 'votes_not_guilty', 'votes_esh', 
             'total_votes', 'user_has_voted', 'comments',
         ]
-        read_only_fields = ['status', 'verdict_timer_ends', 'ai_suggested_hook']
+        read_only_fields = ['status', 'verdict_timer_ends', 'ai_suggested_hook', 'judge_analysis']
 
     def get_author_name(self, obj):
         if obj.author:

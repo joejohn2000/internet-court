@@ -20,6 +20,7 @@ class Case(models.Model):
     
     title_hook = models.CharField(max_length=255, help_text="The hook to capture attention")
     ai_suggested_hook = models.CharField(max_length=255, blank=True, null=True)
+    judge_analysis = models.TextField(blank=True, null=True)
     
     full_story = models.TextField()
     
