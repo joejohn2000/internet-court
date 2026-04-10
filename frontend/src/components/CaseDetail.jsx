@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Scale } from 'lucide-react';
+import { CheckCircle2, Scale, Lock, Bot } from 'lucide-react';
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
 
@@ -7,10 +7,57 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Reset optimistic flag when switching cases
+  const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(60);
+
+  // Reset optimistic flag and analysis state when switching cases
   useEffect(() => {
     setOptimisticVoted(false);
-  }, [item.id]);
+    setJudgeAnalysis(item.judge_analysis || null);
+  }, [item]);
+
+  useEffect(() => {
+    if (!item.created_at) return;
+    const createdAt = new Date(item.created_at).getTime();
+    const unlockTime = createdAt + 60 * 1000;
+
+    const tick = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((unlockTime - now) / 1000));
+      setTimeRemaining(remaining);
+      return remaining;
+    };
+
+    let interval;
+    if (tick() > 0) {
+      interval = setInterval(() => {
+        const remaining = tick();
+        if (remaining === 0) {
+          clearInterval(interval);
+          if (!judgeAnalysis && !analysisLoading) {
+            triggerJudgeAnalysis();
+          }
+        }
+      }, 1000);
+    } else if (!judgeAnalysis && !analysisLoading) {
+       triggerJudgeAnalysis();
+    }
+
+    return () => { if (interval) clearInterval(interval); };
+  }, [item.created_at, item.id, judgeAnalysis, analysisLoading]);
+
+  const triggerJudgeAnalysis = async () => {
+    setAnalysisLoading(true);
+    try {
+      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
+      setJudgeAnalysis(res.data.judge_analysis);
+      showToast('Judge opinion formulated.');
+    } catch (err) {
+      console.error(err);
+    }
+    setAnalysisLoading(false);
+  };
 
   const hasActuallyVoted = optimisticVoted || item.user_has_voted;
 
@@ -80,6 +127,32 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
             <span>NOT GUILTY {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}%</span>
           </div>
         </div>
+      </div>
+
+      <div className="judge-analysis-section" style={{ marginTop: '60px', padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', position: 'relative' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1a1a1a', textTransform: 'uppercase' }}>
+          <Bot size={28} /> AI Judge Analysis
+        </h3>
+        
+        {timeRemaining > 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', border: '2px dashed rgba(0,0,0,0.1)', background: '#fff' }}>
+            <Lock size={48} color="#666" style={{ margin: '0 auto 16px' }} />
+            <h4 style={{ fontWeight: 800, margin: '0 0 8px 0', color: '#1a1a1a', fontSize: '1.2rem', textTransform: 'uppercase' }}>CHAMBERS LOCKED</h4>
+            <p style={{ color: '#666', margin: 0 }}>The AI Judge is reviewing evidence. Opinion releases in <b>{timeRemaining}</b> seconds.</p>
+          </div>
+        ) : analysisLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', background: '#fff', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <p style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.1rem' }}>FORMULATING LEGAL PERSPECTIVE...</p>
+          </div>
+        ) : judgeAnalysis ? (
+          <div style={{ background: '#fff', padding: '32px', borderLeft: '4px solid #1a1a1a', fontStyle: 'italic', color: '#333', fontSize: '1.1rem', lineHeight: '1.8' }}>
+            {judgeAnalysis.split('\n').map((line, i) => (
+              <span key={i}>{line}<br /></span>
+            ))}
+          </div>
+        ) : (
+           <p style={{ color: '#666' }}>Analysis failed to load.</p>
+        )}
       </div>
 
       <CommentSection
