@@ -13,7 +13,8 @@ export const AuthProvider = ({ children, showToast }) => {
     storeUser(userData);
     setUser(userData);
     if (isNew) showToast(`Welcome to the Court, ${userData.username}!`);
-    navigate(userData.is_admin ? '/admin' : '/home');
+    // Redirect admins to dashboard, regular users to History
+    navigate(userData.is_admin ? '/admin' : '/history');
   }, [navigate, showToast]);
 
   const handleLogout = useCallback(async () => {
@@ -31,20 +32,41 @@ export const AuthProvider = ({ children, showToast }) => {
     showToast("Entering Spectator Mode. Voting Enabled (IP-Locked).");
   }, [navigate, showToast]);
 
-  // Handle session timeout or CSRF errors
+  // Handle session timeout and auto-refresh
   useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
+    const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response && [401, 403].includes(error.response.status)) {
-          showToast("Session expired or security error. Logging out.", "error");
-          handleLogout();
+      async (error) => {
+        const originalRequest = error.config;
+        
+        // If 401 and not already retrying, try refresh
+        if (error.response?.status === 401 && !originalRequest._retry && user?.refresh) {
+          originalRequest._retry = true;
+          try {
+            const res = await axios.post(`${API}/users/token/refresh/`, { refresh: user.refresh });
+            const newUser = { ...user, access: res.data.access };
+            storeUser(newUser);
+            setUser(newUser);
+            
+            // Re-run original request with new token
+            originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
+            return axios(originalRequest);
+          } catch (refreshError) {
+            showToast("Session expired. Please log in again.", "error");
+            handleLogout();
+          }
         }
+        
+        if (error.response && [403].includes(error.response.status)) {
+           // For 403 (Forbidden), usually means admin only or specific access denied
+           showToast("Access Denied: Restricted Zone.", "error");
+        }
+        
         return Promise.reject(error);
       }
     );
-    return () => axios.interceptors.response.eject(interceptor);
-  }, [handleLogout, showToast]);
+    return () => axios.interceptors.response.eject(responseInterceptor);
+  }, [user, handleLogout, showToast]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, handleAuthSuccess, handleLogout, handleGuest }}>

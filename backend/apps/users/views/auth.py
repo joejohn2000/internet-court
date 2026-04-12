@@ -4,14 +4,18 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def get_user_response(user):
+    refresh = RefreshToken.for_user(user)
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'is_admin': user.is_staff or user.is_superuser,
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
     }
 
 
