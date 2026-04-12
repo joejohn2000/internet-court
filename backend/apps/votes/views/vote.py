@@ -18,6 +18,11 @@ class VoteViewSet(mixins.CreateModelMixin,
     queryset = Vote.objects.all()
     serializer_class = VoteSerializer
     permission_classes = [permissions.AllowAny]
+    
+    def get_permissions(self):
+        if self.request.query_params.get('user_id'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     def get_queryset(self):
         qs = Vote.objects.all().order_by('-created_at')
