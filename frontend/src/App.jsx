@@ -42,12 +42,12 @@ const AppRoutes = ({ showToast }) => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <LandingPage />} />
-      <Route path="/login" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <LoginPage showToast={showToast} />} />
-      <Route path="/register" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <RegisterPage showToast={showToast} />} />
+      <Route path="/" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <LandingPage />} />
+      <Route path="/login" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <LoginPage showToast={showToast} />} />
+      <Route path="/register" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <RegisterPage showToast={showToast} />} />
 
       {/* Authenticated routes */}
-      <Route path="/home" element={user ? <HomePage showToast={showToast} /> : <Navigate to="/" replace />} />
+      <Route path="/home" element={user && !user.is_admin && !user.is_guest ? <Navigate to="/history" replace /> : <HomePage showToast={showToast} />} />
       <Route path="/history" element={user && !user.is_guest ? <HistoryPage showToast={showToast} /> : <Navigate to="/" replace />} />
 
       {/* Admin routes — non-admins see 404 */}

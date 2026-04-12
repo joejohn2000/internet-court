@@ -29,7 +29,12 @@ class CaseViewSet(viewsets.ModelViewSet):
 
         author_id = self.request.query_params.get('author_id')
         if author_id:
-            queryset = queryset.filter(author_id=author_id)
+            # Only allow filtering by author_id if it's the user themselves or they are staff
+            if self.request.user.is_authenticated and (str(self.request.user.id) == str(author_id) or self.request.user.is_staff):
+                queryset = queryset.filter(author_id=author_id)
+            else:
+                # If they try to peek at someone else's history, return nothing or error
+                queryset = queryset.none()
 
         return queryset
 

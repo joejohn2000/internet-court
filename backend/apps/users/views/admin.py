@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model, authenticate, login
-from rest_framework import status
+from rest_framework import status, permissions
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from apps.feedback.models import Feedback
 
@@ -29,12 +29,7 @@ def admin_login(request):
         return Response({'error': 'Admin access only.'}, status=status.HTTP_403_FORBIDDEN)
 
     login(request, user)
-    return Response({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'is_admin': True,
-    })
+    return Response(get_user_response(user))
 
 
 @api_view(['POST'])
@@ -70,16 +65,11 @@ def create_admin(request):
         password=new_password,
         email=new_email or '',
     )
-    return Response({
-        'id': new_admin.id,
-        'username': new_admin.username,
-        'email': new_admin.email,
-        'is_admin': True,
-    }, status=status.HTTP_201_CREATED)
+    return Response(get_user_response(new_admin), status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminUser])
 def admin_stats(request):
     """Stats visible in the admin dashboard."""
     feedback_count = Feedback.objects.count()

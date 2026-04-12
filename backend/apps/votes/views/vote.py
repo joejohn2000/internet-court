@@ -23,7 +23,11 @@ class VoteViewSet(mixins.CreateModelMixin,
         qs = Vote.objects.all().order_by('-created_at')
         user_id = self.request.query_params.get('user_id')
         if user_id:
-            qs = qs.filter(voter_id=user_id)
+            # Only allow filtering by user_id if it's the user themselves or they are staff
+            if self.request.user.is_authenticated and (str(self.request.user.id) == str(user_id) or self.request.user.is_staff):
+                qs = qs.filter(voter_id=user_id)
+            else:
+                qs = qs.none()
         return qs
 
     def create(self, request, *args, **kwargs):
