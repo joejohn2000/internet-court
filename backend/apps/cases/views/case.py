@@ -41,7 +41,9 @@ class CaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
-        return super().get_permissions()
+        if self.request.query_params.get('author_id'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
     def perform_create(self, serializer):
         from django.contrib.auth import get_user_model
