@@ -76,7 +76,7 @@ const HomePage = ({ showToast }) => {
           </button>
           <div className="nav-user-chip" style={user?.is_guest ? { borderStyle: 'dashed', opacity: 0.8 } : {}}>
             {user?.is_guest ? <Shield size={18} /> : <UserCheck size={18} />}
-            <span>{user?.username.toUpperCase()}</span>
+            <span>{user?.username?.toUpperCase()}</span>
           </div>
           <button id="nav-logout" className="btn btn-glass icon-btn" onClick={() => { handleLogout(); setMobileMenuOpen(false); }} title="Log Out">
             <LogOut size={24} color="var(--danger)" /> <span className="mobile-text">Log Out</span>

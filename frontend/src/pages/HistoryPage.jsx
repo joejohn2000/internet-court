@@ -43,7 +43,7 @@ const HistoryPage = ({ showToast }) => {
         </div>
         <div className="nav-actions">
           <div className="nav-user-chip" style={{ color: '#000', borderColor: 'rgba(0,0,0,0.2)' }}>
-            <UserCheck size={18} /> <span>{user.username.toUpperCase()}</span>
+            <UserCheck size={18} /> <span>{user?.username?.toUpperCase()}</span>
           </div>
         </div>
       </nav>

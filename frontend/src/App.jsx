@@ -42,12 +42,15 @@ const AppRoutes = ({ showToast }) => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <LandingPage />} />
-      <Route path="/login" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <LoginPage showToast={showToast} />} />
-      <Route path="/register" element={user ? <Navigate to={user.is_admin ? '/admin' : '/history'} replace /> : <RegisterPage showToast={showToast} />} />
+      <Route path="/" element={user ? <Navigate to={user.is_admin ? '/admin' : (user.is_guest ? '/home' : '/history')} replace /> : <LandingPage />} />
+      <Route path="/login" element={user ? <Navigate to={user.is_admin ? '/admin' : (user.is_guest ? '/home' : '/history')} replace /> : <LoginPage showToast={showToast} />} />
+      <Route path="/register" element={user ? <Navigate to={user.is_admin ? '/admin' : (user.is_guest ? '/home' : '/history')} replace /> : <RegisterPage showToast={showToast} />} />
 
       {/* Authenticated routes */}
-      <Route path="/home" element={user && !user.is_admin && !user.is_guest ? <Navigate to="/history" replace /> : <HomePage showToast={showToast} />} />
+      <Route path="/home" element={
+        !user ? <Navigate to="/" replace /> : 
+        (user && !user.is_admin && !user.is_guest ? <Navigate to="/history" replace /> : <HomePage showToast={showToast} />)
+      } />
       <Route path="/history" element={user && !user.is_guest ? <HistoryPage showToast={showToast} /> : <Navigate to="/" replace />} />
 
       {/* Admin routes — non-admins see 404 */}
