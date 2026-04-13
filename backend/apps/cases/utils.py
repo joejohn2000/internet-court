@@ -24,9 +24,9 @@ def get_best_model():
             m.generate_content("hi", generation_config={"max_output_tokens": 1})
             return m, None
         except Exception as e:
-            errors.append(f"{name} failed: {str(e)}")
+            errors.append(f"[{name}]: {str(e)[:100]}")
             
-    return None, " | ".join(errors)
+    return None, f"Models exhausted. Total errors: {len(errors)} | Details: {' / '.join(errors)}"
 
 def generate_ai_analysis(case_id, title, story):
     api_key = os.getenv('GEMINI_API_KEY')
@@ -38,6 +38,9 @@ def generate_ai_analysis(case_id, title, story):
         genai.configure(api_key=api_key)
         model, error = get_best_model()
         
+        if not model:
+            return f"CRITICAL CORE FAILURE: No usable models found. Diagnosing: {error[:300]}"
+            
         prompt = f"""
         ACT AS: The Divine Arbiter.
         ANALYZE: #{case_id} Topic: {title} Manifest: {story}. 
