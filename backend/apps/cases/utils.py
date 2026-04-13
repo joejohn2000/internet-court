@@ -3,28 +3,40 @@ import google.generativeai as genai
 import random
 
 def get_best_model():
-    """Dynamically find the best available model for this key."""
+    """Exhaustively try to find a working model."""
+    errors = []
+    # 1. Try dynamic discovery
     try:
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Prefer flash, then pro, then any
-        for preferred in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']:
+        for preferred in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-1.0-pro', 'models/gemini-pro']:
             if preferred in models:
-                return genai.GenerativeModel(preferred.replace('models/', ''))
+                return genai.GenerativeModel(preferred.replace('models/', '')), None
         if models:
-            return genai.GenerativeModel(models[0].replace('models/', ''))
-    except:
-        pass
-    return genai.GenerativeModel('gemini-1.5-flash') # Ultimate fallback
+            return genai.GenerativeModel(models[0].replace('models/', '')), None
+    except Exception as e:
+        errors.append(f"ListModels failed: {str(e)}")
+
+    # 2. Try hardcoded common names
+    for name in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro']:
+        try:
+            m = genai.GenerativeModel(name)
+            # Try a tiny generation to verify
+            m.generate_content("hi", generation_config={"max_output_tokens": 1})
+            return m, None
+        except Exception as e:
+            errors.append(f"{name} failed: {str(e)}")
+            
+    return None, " | ".join(errors)
 
 def generate_ai_analysis(case_id, title, story):
     api_key = os.getenv('GEMINI_API_KEY')
     
     if not api_key:
-        return "ERROR: AI Judge Offline. Neural link requires authorization (API Key Missing). Contact the High Court for access."
+        return "ERROR: AI Judge Offline. (API Key Missing)."
     
     try:
         genai.configure(api_key=api_key)
-        model = get_best_model()
+        model, error = get_best_model()
         
         prompt = f"""
         ACT AS: The Divine Arbiter.
@@ -36,7 +48,7 @@ def generate_ai_analysis(case_id, title, story):
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        return f"CRITICAL CORE FAILURE: The Arbiter encountered a recursive logic error. Error-Code: {str(e)[:150]}"
+        return f"CRITICAL CORE FAILURE: The Arbiter encountered a recursive logic error. Error: {str(e)[:150]}"
 
 def generate_ai_hook(title, story):
     api_key = os.getenv('GEMINI_API_KEY')
@@ -46,7 +58,8 @@ def generate_ai_hook(title, story):
     
     try:
         genai.configure(api_key=api_key)
-        model = get_best_model()
+        model, error = get_best_model()
+        if not model: return f"HOOK_ERROR: {title}"
         
         prompt = f"System: Viral Headline Synthesizer. Task: Refactor '{title}' based on '{story}' into a punchy, click-baity Internet Court Hook. Max 10 words."
         response = model.generate_content(prompt)
