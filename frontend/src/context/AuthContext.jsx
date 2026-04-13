@@ -14,7 +14,7 @@ export const AuthProvider = ({ children, showToast }) => {
     setUser(userData);
     if (isNew) showToast(`Welcome to the Court, ${userData.username}!`);
     // Redirect admins to dashboard, regular users to History
-    navigate(userData.is_admin ? '/admin' : '/history');
+    navigate(userData.is_admin ? '/admin' : '/home');
   }, [navigate, showToast]);
 
   const handleLogout = useCallback(async () => {

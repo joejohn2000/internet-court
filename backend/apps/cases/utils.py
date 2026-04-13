@@ -41,11 +41,24 @@ def generate_ai_analysis(case_id, title, story):
         if not model:
             return f"CRITICAL CORE FAILURE: No usable models found. Diagnosing: {error[:300]}"
             
+        # Professional Judge Prompt
         prompt = f"""
-        ACT AS: The Divine Arbiter.
-        ANALYZE: #{case_id} Topic: {title} Manifest: {story}. 
-        Provide a cold, cyber-noir analysis under 150 words with sections:
-        LEGAL OBSERVATION, DIGITAL PRECEDENT, JUDGE'S DIRECTIVE.
+        ACT AS: The Chief AI Judge of the 'Internet Court'. 
+        YOUR TASK: Analyze the following social conflict and provide a clear, authoritative, and professional legal-style opinion.
+        
+        CASE DATA:
+        Reference: Case #{case_id}
+        Title: {title}
+        Testimony: {story}
+        
+        REQUIRED FORMAT:
+        - LEGAL ANALYSIS: [Summarize the core ethical or social violation clearly]
+        - THE COURT'S REASONING: [Provide an objective logical breakdown of why this is right or wrong]
+        - JUDGE'S RECOMMENDATION: [Give a clear advisory or resolution for the jury to consider]
+        
+        TONE:
+        Professional, stern, objective, and easy to understand. Avoid obscure sci-fi jargon.
+        Keep it under 160 words.
         """
         
         response = model.generate_content(prompt)
