@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   BarChart2,
   FolderKanban,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
-import { fadeIn } from '../../lib/animations';
 import AdminCasesPage from './AdminCasesPage';
 import AdminDomainsPage from './AdminDomainsPage';
 import AdminFeedbackPage from './AdminFeedbackPage';
@@ -115,7 +113,7 @@ const AdminDashboard = ({ showToast }) => {
               className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
               onClick={closeSidebar}
             >
-              <Icon size={20} />
+              {React.createElement(Icon, { size: 20 })}
               <span>
                 <strong>{label}</strong>
                 <small>{description}</small>
@@ -157,19 +155,17 @@ const AdminDashboard = ({ showToast }) => {
           </div>
         </header>
 
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={location.pathname} {...fadeIn} className="admin-route-body">
-            <Routes>
-              <Route index element={<Navigate to="overview" replace />} />
-              <Route path="overview" element={<AdminOverviewPage />} />
-              <Route path="cases" element={<AdminCasesPage showToast={showToast} />} />
-              <Route path="domains" element={<AdminDomainsPage showToast={showToast} />} />
-              <Route path="feedback" element={<AdminFeedbackPage />} />
-              <Route path="operators" element={<AdminOperatorsPage showToast={showToast} />} />
-              <Route path="*" element={<Navigate to="overview" replace />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
+        <div key={location.pathname} className="admin-route-body">
+          <Routes>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<AdminOverviewPage />} />
+            <Route path="cases" element={<AdminCasesPage showToast={showToast} />} />
+            <Route path="domains" element={<AdminDomainsPage showToast={showToast} />} />
+            <Route path="feedback" element={<AdminFeedbackPage />} />
+            <Route path="operators" element={<AdminOperatorsPage showToast={showToast} />} />
+            <Route path="*" element={<Navigate to="overview" replace />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );

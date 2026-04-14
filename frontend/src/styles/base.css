@@ -1,0 +1,67 @@
+:root {
+  /* Analog Courtroom Palette */
+  --bg-dark: #0c0c0e;
+  --bg-slate: #151518;
+  --paper-beige: #e8e4db;
+  --paper-mid: #dcd7ce;
+  --paper-grain: rgba(0, 0, 0, 0.04);
+
+  --ink-black: #1a1a1a;
+  --accent: #ca8a04;
+  --accent-glow: rgba(202, 138, 4, 0.3);
+
+  --success: #15803d;
+  --danger: #b91c1c;
+  --warning: #a16207;
+
+  --text-on-dark: #d1d5db;
+  --text-on-paper: #1a1a1a;
+  --text-muted: #6b7280;
+
+  --shadow-rugged: 2px 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-incised: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  --radius-sharp: 2px;
+  --radius-tag: 4px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-dark);
+  background-image: url('/assets/dark_bg.png');
+  background-repeat: repeat;
+  color: var(--text-on-dark);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+.font-serif,
+.case-title {
+  font-family: 'Arvo', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 100px 32px 60px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}

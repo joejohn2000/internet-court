@@ -74,7 +74,7 @@ const AdminOverviewPage = () => {
       <section className="admin-stats-grid" aria-label="Admin statistics">
         {statItems.map(({ key, label, icon: Icon, tone }) => (
           <div className={`admin-stat-card tone-${tone}`} key={key}>
-            <Icon size={24} />
+            {React.createElement(Icon, { size: 24 })}
             <span className="admin-stat-value">{stats?.[key] || 0}</span>
             <span className="admin-stat-label">{label}</span>
           </div>
@@ -92,7 +92,7 @@ const AdminOverviewPage = () => {
         <div className="admin-action-grid">
           {quickActions.map(({ to, label, text, icon: Icon }) => (
             <Link className="admin-action-card" to={to} key={to}>
-              <Icon size={22} />
+              {React.createElement(Icon, { size: 22 })}
               <strong>{label}</strong>
               <span>{text}</span>
             </Link>

@@ -1,0 +1,239 @@
+.feed-layout {
+  display: flex;
+  gap: 24px;
+}
+
+.feed-list-section {
+  flex: 1;
+}
+
+.feed-list-section.with-detail {
+  flex: 0 0 500px;
+}
+
+.case-card {
+  padding: 24px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 4px solid transparent;
+}
+
+.case-card:hover {
+  transform: rotate(-0.5deg) scale(1.02);
+}
+
+.case-card.active-case {
+  border-color: var(--accent);
+}
+
+.case-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #000;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.case-card header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.case-card .case-id {
+  font-weight: 800;
+  opacity: 0.4;
+  font-size: 0.75rem;
+}
+
+.case-card h3 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+}
+
+.auth-page {
+  background-color: var(--bg-dark);
+  background-image: url('/assets/dark_bg.png');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background-color: #fff;
+  background-image: url('/assets/paper.png');
+  background-size: cover;
+  padding: 60px;
+  border-radius: var(--radius-sharp);
+  color: #000;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.8);
+  border-left: 12px solid var(--accent);
+  position: relative;
+}
+
+.auth-title {
+  font-family: 'Arvo', serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  color: #000;
+}
+
+.auth-sub {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #666;
+  margin-bottom: 40px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 16px;
+}
+
+.detail-panel {
+  flex: 1;
+  position: sticky;
+  top: 130px;
+  height: calc(100vh - 180px);
+  padding: 48px;
+  overflow-y: auto;
+}
+
+.detail-panel h1 {
+  font-size: 3rem;
+  color: #1a1a1a;
+  border-bottom: 3px double rgba(0, 0, 0, 0.1);
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+}
+
+.full-story {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #222;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+.vote-btn-grid {
+  display: grid;
+  width: 100%;
+}
+
+.vote-bar-track {
+  height: 20px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.vote-stats-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: 8rem !important;
+  color: #fff;
+  line-height: 0.9;
+  letter-spacing: -4px;
+  margin-bottom: 24px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-actions .hero-btn {
+  border-radius: 0;
+  font-size: 1.5rem !important;
+  padding: 24px 60px !important;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.comment-section {
+  font-family: 'Inter', sans-serif;
+}
+
+.comment-bubble {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 4px solid var(--accent);
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.comment-bubble:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateX(4px);
+}
+
+.comment-metadata {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.juror-name {
+  color: var(--accent);
+}
+
+.comment-date {
+  color: #888;
+}
+
+.comment-content {
+  color: #333;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.comment-form textarea {
+  background: #fdfdfd;
+  border: 2px solid #ddd;
+  border-left: 6px solid #000;
+  border-radius: 0;
+  padding: 24px;
+  font-size: 1.1rem;
+  font-family: 'Inter', sans-serif;
+  color: #000;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.comment-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
