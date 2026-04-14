@@ -67,7 +67,7 @@ const HomePage = ({ showToast }) => {
           )}
           {!user?.is_guest && (
             <button id="nav-history" className="btn btn-glass icon-btn" onClick={() => { navigate('/history'); setMobileMenuOpen(false); }} title="View My Records">
-              <History size={24} /> <span className="mobile-text">View Records</span>
+              <History size={24} /> <span className="mobile-text">View Recordsx</span>
             </button>
           )}
 
@@ -117,9 +117,9 @@ const HomePage = ({ showToast }) => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
                 className="detail-panel"
-                style={{ flex: 1, position: 'sticky', top: '120px', height: 'calc(100vh - 160px)', borderRadius: '2px', padding: '0', overflowY: 'auto', border: 'none' }}
+                style={{ flex: 1, alignSelf: 'flex-start', borderRadius: '2px', padding: '0', overflow: 'visible', border: 'none' }}
               >
-                <div style={{ position: 'relative', height: '100%' }}>
+                <div style={{ position: 'relative' }}>
                   <button onClick={() => setSelectedCase(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', color: '#000', borderRadius: '50%', padding: '8px', zIndex: 100 }}>
                     <X size={24} />
                   </button>
