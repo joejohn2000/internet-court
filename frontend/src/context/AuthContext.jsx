@@ -27,6 +27,7 @@ export const AuthProvider = ({ children, showToast }) => {
   const handleGuest = useCallback(() => {
     localStorage.removeItem('ic_guest_id');
     const guestUser = { username: 'Spectator', is_guest: true };
+    storeUser(guestUser);
     setUser(guestUser);
     navigate('/home');
     showToast("Entering Spectator Mode. Voting Enabled (IP-Locked).");

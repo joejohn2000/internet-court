@@ -78,6 +78,15 @@
   position: relative;
 }
 
+.auth-form {
+  display: grid;
+  gap: 20px;
+}
+
+.auth-form .btn[type="submit"] {
+  margin-top: 8px;
+}
+
 .auth-title {
   font-family: 'Arvo', serif;
   font-size: 2.5rem;
@@ -101,11 +110,10 @@
 
 .detail-panel {
   flex: 1;
-  position: sticky;
-  top: 130px;
-  height: calc(100vh - 180px);
+  align-self: flex-start;
+  min-height: calc(100vh - 180px);
   padding: 48px;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .detail-panel h1 {
