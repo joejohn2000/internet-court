@@ -37,7 +37,7 @@ const HomePage = ({ showToast }) => {
           return newCases.find(c => c.id === prev.id) || prev;
         });
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { /* silent fail for user UX */ }
     setLoading(false);
   }, []);
 
