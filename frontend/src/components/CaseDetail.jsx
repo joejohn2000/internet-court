@@ -57,7 +57,6 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
       setJudgeAnalysis(res.data.judge_analysis);
       showToast('Judge opinion formulated.');
     } catch (err) {
-      console.error(err);
       setAnalysisFailed(true);
     }
     setAnalysisLoading(false);
