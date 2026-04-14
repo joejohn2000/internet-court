@@ -66,7 +66,7 @@ class CaseViewSet(viewsets.ModelViewSet):
                 except (ValueError, TypeError, get_user_model().DoesNotExist):
                     pass
 
-        serializer.save(author=author, ip_address=ip)
+        serializer.save(author=author, ip_address=ip, status='open')
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):

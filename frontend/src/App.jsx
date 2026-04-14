@@ -51,11 +51,6 @@ const AppRoutes = ({ showToast }) => {
       <Route path="/history" element={user && !user.is_guest ? <HistoryPage showToast={showToast} /> : <Navigate to="/" replace />} />
 
       {/* Admin routes — non-admins see 404 */}
-      <Route path="/admin" element={
-        <ProtectedRoute>
-          <AdminDashboard showToast={showToast} />
-        </ProtectedRoute>
-      } />
       <Route path="/admin/*" element={
         <ProtectedRoute>
           <AdminDashboard showToast={showToast} />
