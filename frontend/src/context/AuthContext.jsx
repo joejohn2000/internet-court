@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import axios, { API } from '../lib/api';
 import { getStoredUser, storeUser, clearUser } from '../lib/auth';
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children, showToast }) => {
             // Re-run original request with new token
             originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
             return axios(originalRequest);
-          } catch (refreshError) {
+          } catch {
             showToast("Session expired. Please log in again.", "error");
             handleLogout();
           }

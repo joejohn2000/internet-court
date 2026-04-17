@@ -4,6 +4,7 @@ import { Mail, MessageCircle } from 'lucide-react';
 import axios, { API } from '../../lib/api';
 
 const getList = (data) => (Array.isArray(data) ? data : data?.results || []);
+const panelClasses = 'rounded-md border border-white/10 bg-black/72 p-4 shadow-[0_16px_36px_rgba(0,0,0,0.24)] sm:p-6';
 
 const typeLabels = {
   bug: 'Bug report',
@@ -38,43 +39,50 @@ const AdminFeedbackPage = () => {
     };
 
     fetchFeedback();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
-    <div className="admin-page-stack">
-      <section className="admin-panel">
-        <div className="admin-section-heading">
+    <div className="grid gap-5 sm:gap-6">
+      <section className={panelClasses}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="admin-eyebrow">Inbox</p>
-            <h2 className="font-serif">User feedback</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">Inbox</p>
+            <h2 className="mt-2 font-serif text-2xl text-white">User feedback</h2>
           </div>
-          <p>{feedback.length} {feedback.length === 1 ? 'message' : 'messages'}</p>
+          <p className="text-sm text-slate-400">{feedback.length} {feedback.length === 1 ? 'message' : 'messages'}</p>
         </div>
 
-        {loading && <div className="admin-empty-state">Loading feedback...</div>}
-        {error && <div className="admin-empty-state error">{error}</div>}
+        {loading && <div className="mt-5 rounded-md border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">Loading feedback...</div>}
+        {error && <div className="mt-5 rounded-md border border-rose-400/20 bg-rose-500/10 px-4 py-6 text-sm text-rose-200">{error}</div>}
 
         {!loading && !error && (
-          <div className="admin-feedback-grid">
+          <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
             {feedback.length === 0 && (
-              <div className="admin-empty-state">No feedback has arrived yet.</div>
+              <div className="rounded-md border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">
+                No feedback has arrived yet.
+              </div>
             )}
             {feedback.map(item => (
-              <article className="admin-feedback-card" key={item.id}>
-                <div className="admin-feedback-header">
-                  <span className="admin-badge">{typeLabels[item.feedback_type] || item.feedback_type}</span>
-                  <time dateTime={item.created_at}>{formatDate(item.created_at)}</time>
+              <article className="rounded-md border border-white/10 bg-white/5 p-4" key={item.id}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <span className="status-badge border-white/12 bg-white/6 text-slate-200">
+                    {typeLabels[item.feedback_type] || item.feedback_type}
+                  </span>
+                  <time dateTime={item.created_at} className="text-sm text-slate-400">
+                    {formatDate(item.created_at)}
+                  </time>
                 </div>
-                <p>{item.message}</p>
-                {item.email && (
-                  <a href={`mailto:${item.email}`} className="admin-email-link">
+                <p className="mt-4 text-sm leading-7 text-slate-100 sm:text-base">{item.message}</p>
+                {item.email ? (
+                  <a href={`mailto:${item.email}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-300 hover:text-teal-200">
                     <Mail size={14} />
                     {item.email}
                   </a>
-                )}
-                {!item.email && (
-                  <span className="admin-email-link muted">
+                ) : (
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm text-slate-400">
                     <MessageCircle size={14} />
                     No contact email
                   </span>

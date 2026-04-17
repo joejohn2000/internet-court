@@ -7,6 +7,7 @@ import axios, { API } from '../lib/api';
 import { slideUp } from '../lib/animations';
 
 const RegisterPage = ({ showToast }) => {
+  const MotionDiv = motion.div;
   const navigate = useNavigate();
   const { handleAuthSuccess } = useAuth();
   const [form, setForm] = useState({ username: '', password: '', email: '' });
@@ -26,69 +27,94 @@ const RegisterPage = ({ showToast }) => {
   };
 
   return (
-    <motion.div {...slideUp} className="auth-page">
-      <div className="auth-card">
-        <button className="btn btn-glass" onClick={() => navigate('/')} style={{ position: 'absolute', top: '24px', right: '24px', padding: '10px' }}>
-          <X size={20} />
-        </button>
+    <MotionDiv {...slideUp} className="page-shell flex items-center py-8 sm:py-12">
+      <div className="content-shell">
+        <div className="mx-auto w-full max-w-md">
+          <div className="panel-paper relative p-5 sm:p-8">
+            <button
+              className="btn-paper absolute right-4 top-4 min-h-10 px-3 py-2"
+              onClick={() => navigate('/')}
+              aria-label="Back to landing page"
+            >
+              <X size={18} />
+            </button>
 
-        <div className="auth-icon-wrap">
-          <UserPlus size={32} color="var(--accent)" />
-        </div>
-        <h2 className="auth-title">Enlistment</h2>
-        <p className="auth-sub">Register for the Global Jury Pool</p>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="field-group">
-            <label htmlFor="user-register-username">Username</label>
-            <input
-              id="user-register-username"
-              className="form-input"
-              placeholder="e.g. adjudicator_7"
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              required
-            />
-          </div>
-          <div className="field-group">
-            <label htmlFor="reg-email">Email (to verify status)</label>
-            <input id="reg-email" className="form-input" type="email" placeholder="juror@example.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <div className="field-group">
-            <label htmlFor="user-register-password">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="user-register-password"
-                type={showPassword ? "text" : "password"}
-                className="form-input"
-                style={{ paddingRight: '48px' }}
-                placeholder="••••••••"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} className="eye-blink" />}
-              </button>
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-900/10 bg-white/70 text-court-accent shadow-sm">
+              <UserPlus size={28} />
             </div>
+            <h1 className="mt-5 font-serif text-3xl leading-tight text-slate-950 sm:text-4xl">Enlistment</h1>
+            <p className="mt-2 border-b border-slate-900/10 pb-4 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
+              Register for the global jury pool
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
+              <div>
+                <label htmlFor="user-register-username" className="field-label">Username</label>
+                <input
+                  id="user-register-username"
+                  className="input-field"
+                  placeholder="e.g. adjudicator_7"
+                  value={form.username}
+                  onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-email" className="field-label">Email (to verify status)</label>
+                <input
+                  id="reg-email"
+                  className="input-field"
+                  type="email"
+                  placeholder="juror@example.com"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <label htmlFor="user-register-password" className="field-label">Password</label>
+                <div className="relative">
+                  <input
+                    id="user-register-password"
+                    type={showPassword ? "text" : "password"}
+                    className="input-field pr-12"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <button
+                id="user-register-submit"
+                className="btn-primary mt-1 w-full"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Register for Service'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm leading-6 text-slate-600">
+              Already registered?{' '}
+              <button
+                onClick={() => navigate('/login')}
+                className="font-bold text-court-accent transition hover:text-court-accent-deep"
+              >
+                Sign in here
+              </button>
+            </p>
           </div>
-          <button id="user-register-submit" className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', padding: '16px', minHeight: '56px', marginBottom: '24px' }}>
-            {loading ? 'Processing...' : 'Register for Service'}
-          </button>
-        </form>
-        <p style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-          Already registered? <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Sign in here</button>
-        </p>
+        </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 
