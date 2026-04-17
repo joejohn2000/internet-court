@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-export const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+const DEFAULT_API = 'https://internet-court.onrender.com/api';
+
+export const API = import.meta.env.VITE_API_BASE || DEFAULT_API;
 axios.defaults.withCredentials = true;
 
 // Attach user identity/token to every request
