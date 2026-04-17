@@ -9,7 +9,7 @@ import {
   User
 } from 'lucide-react';
 
-const CaseCard = ({ item, isActive, onClick }) => {
+const CaseCard = ({ item, isActive, onClick, cardRef }) => {
   const MotionButton = motion.button;
   const total = item.total_votes || 0;
   const guilty = total ? Math.round((item.votes_guilty / total) * 100) : 0;
@@ -47,6 +47,7 @@ const CaseCard = ({ item, isActive, onClick }) => {
     <MotionButton
       layout
       whileHover={{ y: -3 }}
+      ref={cardRef}
       type="button"
       onClick={onClick}
       className={`w-full rounded-md border p-4 text-left shadow-[0_16px_36px_rgba(0,0,0,0.22)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-court-accent/80 focus-visible:ring-offset-2 focus-visible:ring-offset-court-ink sm:p-5 ${

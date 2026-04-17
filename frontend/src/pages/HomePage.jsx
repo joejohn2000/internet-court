@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -29,6 +29,9 @@ const HomePage = ({ showToast }) => {
   const [modalType, setModalType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [detailOffset, setDetailOffset] = useState(0);
+  const feedScrollRef = useRef(null);
+  const caseCardRefs = useRef(new Map());
 
   const fetchContent = useCallback(async (syncSelection = false) => {
     try {
@@ -62,6 +65,55 @@ const HomePage = ({ showToast }) => {
     };
   }, [fetchContent]);
 
+  const setCaseCardRef = useCallback((caseId, node) => {
+    if (node) {
+      caseCardRefs.current.set(caseId, node);
+      return;
+    }
+
+    caseCardRefs.current.delete(caseId);
+  }, []);
+
+  const syncDetailOffset = useCallback((caseId) => {
+    if (typeof window === 'undefined' || window.innerWidth < 1280) {
+      setDetailOffset(0);
+      return;
+    }
+
+    const feedScroll = feedScrollRef.current;
+    const caseCard = caseCardRefs.current.get(caseId);
+
+    if (!feedScroll || !caseCard) {
+      setDetailOffset(0);
+      return;
+    }
+
+    const feedScrollRect = feedScroll.getBoundingClientRect();
+    const caseCardRect = caseCard.getBoundingClientRect();
+    const nextOffset = Math.max(0, caseCardRect.top - feedScrollRect.top);
+
+    setDetailOffset(nextOffset);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCase) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      syncDetailOffset(selectedCase.id);
+    });
+
+    const handleResize = () => {
+      syncDetailOffset(selectedCase.id);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [selectedCase, syncDetailOffset, cases.length]);
+
   const openCase = (nextCase) => {
     setSelectedCase(nextCase);
     if (window.matchMedia('(max-width: 1279px)').matches) {
@@ -75,14 +127,17 @@ const HomePage = ({ showToast }) => {
   };
 
   return (
-    <div className="page-shell">
-      <nav className="sticky top-0 z-40 border-b border-amber-400/20 bg-black/88 backdrop-blur">
-        <div className="content-shell relative">
+    <div className="page-shell xl:flex xl:h-screen xl:flex-col xl:overflow-hidden">
+      <nav className="sticky top-0 z-40 shrink-0 border-b border-amber-400/20 bg-black/88 backdrop-blur">
+        <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-6 lg:px-8 relative">
           <div className="flex min-h-18 items-center justify-between gap-4 py-3">
             <button
               type="button"
               className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1 text-left transition hover:bg-white/5"
-              onClick={() => setSelectedCase(null)}
+              onClick={() => {
+                setSelectedCase(null);
+                setDetailOffset(0);
+              }}
             >
               <img
                 src="/assets/logo.png"
@@ -168,9 +223,9 @@ const HomePage = ({ showToast }) => {
         </div>
       </nav>
 
-      <main className="content-shell py-6 sm:py-8 lg:py-10">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(380px,1.08fr)] xl:items-start">
-          <section className={selectedCase ? 'order-2 xl:order-1' : 'order-1'}>
+      <main className="mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 xl:flex-1 xl:min-h-0 xl:overflow-hidden">
+        <div className={`grid gap-6 xl:h-full xl:min-h-0 ${selectedCase ? 'xl:grid-cols-[minmax(0,0.92fr)_minmax(380px,1.08fr)]' : 'xl:grid-cols-1'}`}>
+          <section className={`${selectedCase ? 'order-2 xl:order-1' : 'order-1'} xl:flex xl:min-h-0 xl:flex-col`}>
             <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h1 className="font-serif text-3xl text-white sm:text-4xl lg:text-5xl">Public Docket</h1>
@@ -184,7 +239,11 @@ const HomePage = ({ showToast }) => {
             </header>
 
             <LayoutGroup>
-              <MotionDiv layout className="grid gap-4 sm:gap-5">
+              <MotionDiv
+                layout
+                ref={feedScrollRef}
+                className="grid gap-4 sm:gap-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-2"
+              >
                 {loading ? (
                   <div className="section-card p-5 text-sm text-slate-300 sm:p-6">
                     Accessing database...
@@ -202,6 +261,7 @@ const HomePage = ({ showToast }) => {
                       key={c.id}
                       item={c}
                       isActive={selectedCase?.id === c.id}
+                      cardRef={node => setCaseCardRef(c.id, node)}
                       onClick={() => openCase(c)}
                     />
                   ))
@@ -212,30 +272,35 @@ const HomePage = ({ showToast }) => {
 
           <AnimatePresence>
             {selectedCase && (
-              <MotionSection
-                initial={{ opacity: 0, x: 32 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 24 }}
-                className="order-1 xl:order-2 xl:sticky xl:top-24"
-              >
-                <div className="relative">
-                  <button
-                    onClick={() => setSelectedCase(null)}
-                    className="btn-paper absolute right-4 top-4 z-10 min-h-10 px-3 py-2"
-                    aria-label="Close case detail"
-                  >
-                    <X size={18} />
-                  </button>
-                  <CaseDetail
-                    key={selectedCase.id}
-                    item={selectedCase}
-                    showToast={showToast}
-                    onRefresh={() => {
-                      fetchContent(true);
-                    }}
-                  />
-                </div>
-              </MotionSection>
+              <div className="order-1 xl:order-2 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+                <MotionSection
+                  initial={{ opacity: 0, x: 32 }}
+                  animate={{ opacity: 1, x: 0, marginTop: detailOffset }}
+                  exit={{ opacity: 0, x: 24 }}
+                  className="xl:pb-6"
+                >
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setSelectedCase(null);
+                        setDetailOffset(0);
+                      }}
+                      className="btn-paper absolute right-4 top-4 z-10 min-h-10 px-3 py-2"
+                      aria-label="Close case detail"
+                    >
+                      <X size={18} />
+                    </button>
+                    <CaseDetail
+                      key={selectedCase.id}
+                      item={selectedCase}
+                      showToast={showToast}
+                      onRefresh={() => {
+                        fetchContent(true);
+                      }}
+                    />
+                  </div>
+                </MotionSection>
+              </div>
             )}
           </AnimatePresence>
         </div>
