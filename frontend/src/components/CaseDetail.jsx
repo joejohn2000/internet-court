@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Scale, Lock, Bot } from 'lucide-react';
+
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
 
-const CaseDetail = ({ item, user, showToast, onRefresh }) => {
+const CaseDetail = ({ item, showToast, onRefresh }) => {
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisFailed, setAnalysisFailed] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60);
 
-  // Reset optimistic flag and analysis state when switching cases
-  useEffect(() => {
-    setOptimisticVoted(false);
-    setJudgeAnalysis(item.judge_analysis || null);
+  const triggerJudgeAnalysis = useCallback(async () => {
+    setAnalysisLoading(true);
     setAnalysisFailed(false);
-  }, [item]);
+    try {
+      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
+      setJudgeAnalysis(res.data.judge_analysis);
+      showToast('Judge opinion formulated.');
+    } catch {
+      setAnalysisFailed(true);
+    }
+    setAnalysisLoading(false);
+  }, [item.id, showToast]);
 
   useEffect(() => {
     if (!item.created_at) return;
@@ -32,35 +38,30 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
     };
 
     let interval;
+    let triggerTimer;
     if (tick() > 0) {
       interval = setInterval(() => {
         const remaining = tick();
         if (remaining === 0) {
           clearInterval(interval);
           if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
-            triggerJudgeAnalysis();
+            triggerTimer = window.setTimeout(() => {
+              triggerJudgeAnalysis();
+            }, 0);
           }
         }
       }, 1000);
     } else if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
-       triggerJudgeAnalysis();
+      triggerTimer = window.setTimeout(() => {
+        triggerJudgeAnalysis();
+      }, 0);
     }
 
-    return () => { if (interval) clearInterval(interval); };
-  }, [item.created_at, item.id, judgeAnalysis, analysisLoading, analysisFailed]);
-
-  const triggerJudgeAnalysis = async () => {
-    setAnalysisLoading(true);
-    setAnalysisFailed(false);
-    try {
-      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
-      setJudgeAnalysis(res.data.judge_analysis);
-      showToast('Judge opinion formulated.');
-    } catch (err) {
-      setAnalysisFailed(true);
-    }
-    setAnalysisLoading(false);
-  };
+    return () => {
+      if (interval) clearInterval(interval);
+      if (triggerTimer) window.clearTimeout(triggerTimer);
+    };
+  }, [item.created_at, judgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
 
   const hasActuallyVoted = optimisticVoted || item.user_has_voted;
 
@@ -78,85 +79,151 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
   };
 
   const total = item.total_votes || 0;
+  const voteData = [
+    {
+      label: 'Guilty',
+      key: 'guilty',
+      votes: item.votes_guilty,
+      percent: total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0,
+      barClass: 'bg-rose-600'
+    },
+    {
+      label: 'Neutral',
+      key: 'neutral',
+      votes: item.votes_esh,
+      percent: total > 0 ? Math.round((item.votes_esh / total) * 100) : 0,
+      barClass: 'bg-amber-600'
+    },
+    {
+      label: 'Not guilty',
+      key: 'not-guilty',
+      votes: item.votes_not_guilty,
+      percent: total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0,
+      barClass: 'bg-emerald-600'
+    }
+  ];
 
   return (
-    <div className="paper-card" style={{ padding: '48px', minHeight: '100%', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <span className="case-tag">{item.category?.name || 'PUBLIC DOCKET'}</span>
-        <span className="case-id">ARCHIVE REF: #{item.id}</span>
+    <article className="panel-paper overflow-hidden p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col gap-3 border-b border-slate-900/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <span className="chip-paper">{item.category?.name || 'Public docket'}</span>
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+          Archive ref #{item.id}
+        </span>
       </div>
 
-      <h1 style={{ fontSize: '3.5rem', marginBottom: '32px', color: '#1a1a1a', lineHeight: 1 }}>{item.title_hook}</h1>
+      <header className="mt-5">
+        <h1 className="font-serif text-3xl leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
+          {item.title_hook}
+        </h1>
+      </header>
 
-      <div style={{ padding: '32px 0', borderTop: '1px solid rgba(0,0,0,0.1)', borderBottom: '1px solid rgba(0,0,0,0.1)', marginBottom: '48px' }}>
-        <p className="full-story" style={{ color: '#222', fontSize: '1.25rem' }}>{item.full_story}</p>
-      </div>
+      <section className="mt-6 border-y border-slate-900/10 py-5">
+        <p className="text-base leading-8 text-slate-800 sm:text-lg">{item.full_story}</p>
+      </section>
 
-      <div className="verdict-section">
+      <section className="mt-6 rounded-md border border-slate-900/10 bg-white/55 p-4 sm:p-6">
         {hasActuallyVoted ? (
-          <div style={{ padding: '40px', background: 'rgba(0,0,0,0.03)', border: '2px dashed rgba(0,0,0,0.1)', textAlign: 'center' }}>
-            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '16px', margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px', color: '#1a1a1a' }}>VERDICT SEALED</h3>
-            <p style={{ color: '#444', fontSize: '1rem' }}>Your contribution to digital justice has been recorded. Thank you for your service, juror.</p>
+          <div className="rounded-md border border-dashed border-emerald-600/20 bg-emerald-600/5 px-4 py-6 text-center sm:px-6">
+            <CheckCircle2 size={42} className="mx-auto text-court-success" />
+            <h2 className="mt-4 text-xl font-bold uppercase tracking-[0.12em] text-slate-900">
+              Verdict sealed
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
+              Your contribution to digital justice has been recorded. Thank you for your service, juror.
+            </p>
           </div>
         ) : (
           <>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1a1a1a', textTransform: 'uppercase' }}>
-              <Scale size={24} /> Submit Final Verdict
-            </h3>
-            <div className="vote-btn-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-              <button className="btn btn-glass" onClick={() => handleVote('guilty')} style={{ padding: '16px', minHeight: '56px' }}>GUILTY</button>
-              <button className="btn btn-glass" onClick={() => handleVote('esh')} style={{ padding: '16px', minHeight: '56px' }}>NEUTRAL</button>
-              <button className="btn btn-glass" onClick={() => handleVote('not_guilty')} style={{ padding: '16px', minHeight: '56px' }}>NOT GUILTY</button>
+            <h2 className="flex items-center gap-3 text-lg font-bold uppercase tracking-[0.12em] text-slate-900">
+              <Scale size={20} />
+              Submit final verdict
+            </h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <button
+                className="btn-paper w-full"
+                onClick={() => handleVote('guilty')}
+                disabled={loading}
+              >
+                Guilty
+              </button>
+              <button
+                className="btn-paper w-full"
+                onClick={() => handleVote('esh')}
+                disabled={loading}
+              >
+                Neutral
+              </button>
+              <button
+                className="btn-paper w-full"
+                onClick={() => handleVote('not_guilty')}
+                disabled={loading}
+              >
+                Not guilty
+              </button>
             </div>
           </>
         )}
 
-        <div style={{ marginTop: '60px' }}>
-          <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'baseline' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#1a1a1a' }}>LIVE ADJUDICATION DATA</span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#444' }}>{total} TOTAL VERDICTS</span>
+        <div className="mt-6 space-y-4 border-t border-slate-900/10 pt-6">
+          <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                Live adjudication data
+              </p>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Current verdict split</h3>
+            </div>
+            <span className="text-sm font-semibold text-slate-600">{total} total verdicts</span>
           </header>
 
-          <div className="vote-bar-track">
-            <div className="vote-bar-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_guilty / total) * 100)}%` : '0%', background: '#b91c1c' }} />
-            <div className="vote-bar-esh" style={{ width: total > 0 ? `${Math.round((item.votes_esh / total) * 100)}%` : '0%', background: '#a16207' }} />
-            <div className="vote-bar-not-guilty" style={{ width: total > 0 ? `${Math.round((item.votes_not_guilty / total) * 100)}%` : '0%', background: '#15803d' }} />
-          </div>
-
-          <div className="vote-stats-row" style={{ color: '#1a1a1a' }}>
-            <span>GUILTY {total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0}%</span>
-            <span>NEUTRAL {total > 0 ? Math.round((item.votes_esh / total) * 100) : 0}%</span>
-            <span>NOT GUILTY {total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0}%</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="judge-analysis-section" style={{ marginTop: '60px', padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', position: 'relative' }}>
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', color: '#1a1a1a', textTransform: 'uppercase' }}>
-          <Bot size={28} /> AI Judge Analysis
-        </h3>
-        
-        {timeRemaining > 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', border: '2px dashed rgba(0,0,0,0.1)', background: '#fff' }}>
-            <Lock size={48} color="#666" style={{ margin: '0 auto 16px' }} />
-            <h4 style={{ fontWeight: 800, margin: '0 0 8px 0', color: '#1a1a1a', fontSize: '1.2rem', textTransform: 'uppercase' }}>CHAMBERS LOCKED</h4>
-            <p style={{ color: '#666', margin: 0 }}>The AI Judge is reviewing evidence. Opinion releases in <b>{timeRemaining}</b> seconds.</p>
-          </div>
-        ) : analysisLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', background: '#fff', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <p style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.1rem' }}>FORMULATING LEGAL PERSPECTIVE...</p>
-          </div>
-        ) : judgeAnalysis ? (
-          <div style={{ background: '#fff', padding: '32px', borderLeft: '4px solid #1a1a1a', fontStyle: 'italic', color: '#333', fontSize: '1.1rem', lineHeight: '1.8' }}>
-            {judgeAnalysis.split('\n').map((line, i) => (
-              <span key={i}>{line}<br /></span>
+          <div className="vote-track">
+            {voteData.map(({ key, percent, barClass }) => (
+              <div key={key} className={barClass} style={{ width: `${percent}%` }} />
             ))}
           </div>
-        ) : (
-           <p style={{ color: '#666' }}>Analysis failed to load.</p>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {voteData.map(({ key, label, votes, percent }) => (
+              <div key={key} className="rounded-md border border-slate-900/8 bg-white/70 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">{percent}%</p>
+                <p className="text-sm text-slate-600">{votes} votes</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-md border border-slate-900/10 bg-slate-900/[0.035] p-4 sm:p-6">
+        <h2 className="flex items-center gap-3 text-lg font-bold uppercase tracking-[0.12em] text-slate-900">
+          <Bot size={22} />
+          AI Judge Analysis
+        </h2>
+
+        <div className="mt-4 rounded-md border border-slate-900/10 bg-white/85 p-4 sm:p-5">
+          {timeRemaining > 0 ? (
+            <div className="flex flex-col items-center text-center">
+              <Lock size={42} className="text-slate-500" />
+              <h3 className="mt-4 text-lg font-bold uppercase tracking-[0.12em] text-slate-900">
+                Chambers locked
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
+                The AI Judge is reviewing evidence. Opinion releases in <strong>{timeRemaining}</strong> seconds.
+              </p>
+            </div>
+          ) : analysisLoading ? (
+            <p className="text-center text-sm font-semibold uppercase tracking-[0.12em] text-slate-600 sm:text-base">
+              Formulating legal perspective...
+            </p>
+          ) : judgeAnalysis ? (
+            <div className="border-l-4 border-slate-900 pl-4 text-base leading-8 whitespace-pre-line text-slate-700">
+              {judgeAnalysis}
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-slate-600">Analysis failed to load.</p>
+          )}
+        </div>
+      </section>
 
       <CommentSection
         caseId={item.id}
@@ -164,7 +231,7 @@ const CaseDetail = ({ item, user, showToast, onRefresh }) => {
         showToast={showToast}
         onRefresh={onRefresh}
       />
-    </div>
+    </article>
   );
 };
 

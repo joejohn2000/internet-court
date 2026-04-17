@@ -25,7 +25,7 @@ const AppShell = () => {
 
   return (
     <AuthProvider showToast={showToast}>
-      <div className="layout-container">
+      <div className="app-shell">
         <AnimatePresence mode="wait">
           <AppRoutes showToast={showToast} />
         </AnimatePresence>

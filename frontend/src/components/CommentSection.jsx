@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MessageCircle, Send } from 'lucide-react';
+
 import axios, { API } from '../lib/api';
 
 const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
@@ -15,56 +16,62 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
       setContent('');
       showToast('Comment appended to casefile.');
       onRefresh();
-    } catch (err) {
+    } catch {
       showToast('Failed to post comment.', 'error');
     }
     setSubmitting(false);
   };
 
   return (
-    <div className="comment-section" style={{ marginTop: '80px', paddingTop: '60px', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
-      <h3 className="font-serif" style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '32px', color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <MessageCircle size={28} /> Juror Deliberations
-      </h3>
+    <section className="mt-8 border-t border-slate-900/10 pt-8 sm:mt-10 sm:pt-10">
+      <div className="flex items-center gap-3">
+        <MessageCircle size={24} className="text-slate-800" />
+        <h2 className="font-serif text-2xl text-slate-900">Juror Deliberations</h2>
+      </div>
 
-      <div style={{ display: 'grid', gap: '24px', marginBottom: '60px' }}>
-        {(!comments || comments.length === 0) ? (
-          <div style={{ padding: '40px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)', textAlign: 'center', color: '#666' }}>
+      <div className="mt-5 grid gap-4">
+        {!comments || comments.length === 0 ? (
+          <div className="rounded-md border border-dashed border-slate-900/12 bg-slate-900/[0.03] px-4 py-6 text-center text-sm leading-6 text-slate-600 sm:px-6">
             No deliberations yet. Be the first to provide testimony.
           </div>
         ) : (
           comments.map(c => (
-            <div key={c.id} className="comment-bubble">
-              <div className="comment-metadata">
-                <span className="juror-name">FILE JUROR: {c.author_name?.toUpperCase() || 'ANONYMOUS'}</span>
-                <span className="comment-date">{new Date(c.created_at).toLocaleString()}</span>
+            <article
+              key={c.id}
+              className="rounded-md border border-slate-900/10 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-5"
+            >
+              <div className="flex flex-col gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-court-accent">
+                  File juror: {c.author_name?.toUpperCase() || 'ANONYMOUS'}
+                </span>
+                <span>{new Date(c.created_at).toLocaleString()}</span>
               </div>
-              <p className="comment-content">{c.content}</p>
-            </div>
+              <p className="mt-3 text-sm leading-7 text-slate-700 sm:text-base">{c.content}</p>
+            </article>
           ))
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="comment-form">
-        <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Lodge Your Testimony</label>
+      <form onSubmit={handleSubmit} className="mt-6 grid gap-3">
+        <label className="field-label" htmlFor="case-comment-message">Lodge your testimony</label>
         <textarea
-          className="form-input"
+          id="case-comment-message"
+          className="text-area-field min-h-32"
           placeholder="Enter your observations and rationale..."
           value={content}
           onChange={e => setContent(e.target.value)}
           disabled={submitting}
-          style={{ minHeight: '120px' }}
         />
         <button
           type="submit"
-          className="btn btn-primary"
-          style={{ marginTop: '20px', width: '100%', minHeight: '56px', fontSize: '1.1rem' }}
+          className="btn-primary w-full"
           disabled={submitting || !content.trim()}
         >
-          {submitting ? 'APPENDING...' : 'APPEND TESTIMONY TO RECORD'}
+          <Send size={18} />
+          {submitting ? 'Appending...' : 'Append testimony to record'}
         </button>
       </form>
-    </div>
+    </section>
   );
 };
 

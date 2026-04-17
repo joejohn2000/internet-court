@@ -1,10 +1,28 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X } from 'lucide-react';
+
 import axios, { API } from '../lib/api';
 import { fadeIn, slideUp } from '../lib/animations';
 
-const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
+const titles = {
+  submit: 'Submit dispute',
+  'edit-case': 'Edit dossier',
+  'create-domain': 'Establish domain',
+  'edit-domain': 'Revise domain',
+  feedback: 'Feedback center'
+};
+
+const submitLabels = {
+  submit: 'Lodge dispute',
+  'edit-case': 'Update record',
+  'create-domain': 'Establish domain',
+  'edit-domain': 'Update record',
+  feedback: 'Send feedback'
+};
+
+const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) => {
+  const MotionDiv = motion.div;
   const [form, setForm] = useState({
     hook: item?.title_hook || '',
     story: item?.full_story || '',
@@ -60,120 +78,202 @@ const Modal = ({ type, cats, user, onClose, onSuccess, showToast, item }) => {
         showToast('Feedback received.');
       }
       onSuccess();
-    } catch { showToast('Submission error.', 'error'); }
+    } catch {
+      showToast('Submission error.', 'error');
+    }
     setLoading(false);
   };
 
   return (
-    <motion.div {...fadeIn} className="modal-backdrop" onClick={onClose}>
-      <motion.div {...slideUp} className="glass modal-content" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="modal-close-btn">
-          <X size={24} />
+    <MotionDiv
+      {...fadeIn}
+      className="fixed inset-0 z-50 flex items-end bg-black/80 p-4 backdrop-blur sm:items-center sm:p-6"
+      onClick={onClose}
+    >
+      <MotionDiv
+        {...slideUp}
+        role="dialog"
+        aria-modal="true"
+        className="panel-dark relative max-h-[min(100vh-2rem,48rem)] w-full overflow-y-auto p-5 sm:mx-auto sm:max-w-2xl sm:p-8"
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="icon-button absolute right-4 top-4 h-10 w-10" aria-label="Close modal">
+          <X size={18} />
         </button>
 
-        <h2 className="font-serif" style={{ fontSize: '2.4rem', marginBottom: '32px' }}>
-          {type === 'submit' ? 'Submit Dispute' : type === 'edit-case' ? 'Edit Dossier' : type === 'create-domain' ? 'Establish Domain' : type === 'edit-domain' ? 'Revise Domain' : 'Feedback Center'}
-        </h2>
+        <h2 className="pr-12 font-serif text-3xl text-white sm:text-4xl">{titles[type] || 'Modal'}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+          {type === 'feedback'
+            ? 'Share a bug, request, or note without losing your place.'
+            : 'Use the form below and submit when everything looks right.'}
+        </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
           {type.includes('domain') ? (
-            <div style={{ display: 'grid', gap: '20px' }}>
-              <div className="field-group">
-                <label>Domain Identity</label>
+            <>
+              <div>
+                <label className="field-label" htmlFor="domain-name">Domain identity</label>
                 <input
-                  className="form-input"
+                  id="domain-name"
+                  className="dark-input"
                   placeholder="e.g. Workplace"
                   value={form.category}
                   onChange={e => setForm({ ...form, category: e.target.value })}
                   required
                 />
               </div>
-              <div className="field-group">
-                <label>System Slug</label>
+              <div>
+                <label className="field-label" htmlFor="domain-slug">System slug</label>
                 <input
-                  className="form-input"
+                  id="domain-slug"
+                  className="dark-input"
                   placeholder="e.g. workplace-politics"
                   value={form.slug}
                   onChange={e => setForm({ ...form, slug: e.target.value })}
                 />
               </div>
-            </div>
+            </>
           ) : type === 'submit' || type === 'edit-case' ? (
-            <div style={{ display: 'grid', gap: '20px' }}>
+            <>
               {type === 'submit' && (
-                <div className="anon-toggle-wrap">
-                  <label className="anon-toggle">
-                    <input type="checkbox" checked={anon} onChange={e => setAnon(e.target.checked)} />
-                    <span className="slider" />
-                  </label>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Submit as Anonymous</span>
-                </div>
+                <label className="flex items-start gap-3 rounded-md border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={anon}
+                    onChange={e => setAnon(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-white/20"
+                  />
+                  <span>
+                    <span className="block font-semibold text-white">Submit anonymously</span>
+                    <span className="mt-1 block text-slate-400">
+                      Hide your display name from the docket while preserving the submission.
+                    </span>
+                  </span>
+                </label>
               )}
 
               {type === 'edit-case' && (
-                <div className="field-group">
-                  <label>Operational Status</label>
-                  <select className="form-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} required>
-                    <option value="open">Open for Judging</option>
-                    <option value="closed">Verdict Reached</option>
+                <div>
+                  <label className="field-label" htmlFor="case-status">Operational status</label>
+                  <select
+                    id="case-status"
+                    className="dark-select"
+                    value={form.status}
+                    onChange={e => setForm({ ...form, status: e.target.value })}
+                    required
+                  >
+                    <option value="open">Open for judging</option>
+                    <option value="closed">Verdict reached</option>
                   </select>
                 </div>
               )}
 
               {type === 'submit' && !anon && (
-                <div className="field-group">
-                  <label>Display Name</label>
-                  <input id="case-author" className="form-input" placeholder={user?.username} value={form.author_name} onChange={e => setForm({ ...form, author_name: e.target.value })} />
+                <div>
+                  <label className="field-label" htmlFor="case-author">Display name</label>
+                  <input
+                    id="case-author"
+                    className="dark-input"
+                    placeholder={user?.username}
+                    value={form.author_name}
+                    onChange={e => setForm({ ...form, author_name: e.target.value })}
+                  />
                 </div>
               )}
 
               {type === 'submit' && (
-                <div className="field-group">
-                  <label>Category</label>
-                  <select id="case-cat" className="form-input" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} required>
-                    <option value="">Select Domain...</option>
-                    {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                <div>
+                  <label className="field-label" htmlFor="case-cat">Category</label>
+                  <select
+                    id="case-cat"
+                    className="dark-select"
+                    value={form.category}
+                    onChange={e => setForm({ ...form, category: e.target.value })}
+                    required
+                  >
+                    <option value="">Select domain...</option>
+                    {cats.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
                   </select>
                 </div>
               )}
 
-              <div className="field-group">
-                <label>Attention Hook</label>
-                <input id="case-hook" className="form-input" placeholder="e.g. AITA for refusing to pay for my friend's dinner?" value={form.hook} onChange={e => setForm({ ...form, hook: e.target.value })} required />
+              <div>
+                <label className="field-label" htmlFor="case-hook">Attention hook</label>
+                <input
+                  id="case-hook"
+                  className="dark-input"
+                  placeholder="e.g. AITA for refusing to pay for my friend's dinner?"
+                  value={form.hook}
+                  onChange={e => setForm({ ...form, hook: e.target.value })}
+                  required
+                />
               </div>
 
-              <div className="field-group">
-                <label>The Full Story</label>
-                <textarea id="case-story" className="form-input" rows={6} placeholder="Provide all context and testimony..." value={form.story} onChange={e => setForm({ ...form, story: e.target.value })} required />
+              <div>
+                <label className="field-label" htmlFor="case-story">The full story</label>
+                <textarea
+                  id="case-story"
+                  className="dark-textarea"
+                  rows={6}
+                  placeholder="Provide all context and testimony..."
+                  value={form.story}
+                  onChange={e => setForm({ ...form, story: e.target.value })}
+                  required
+                />
               </div>
-            </div>
+            </>
           ) : (
-            <div style={{ display: 'grid', gap: '20px' }}>
-              <div className="field-group">
-                <label>Feedback Category</label>
-                <select id="fb-type" className="form-input" value={form.feedback_type} onChange={e => setForm({ ...form, feedback_type: e.target.value })} required>
-                  <option value="bug">Report Malfunction</option>
-                  <option value="feature">Enhancement Request</option>
-                  <option value="other">General Protocol</option>
+            <>
+              <div>
+                <label className="field-label" htmlFor="fb-type">Feedback category</label>
+                <select
+                  id="fb-type"
+                  className="dark-select"
+                  value={form.feedback_type}
+                  onChange={e => setForm({ ...form, feedback_type: e.target.value })}
+                  required
+                >
+                  <option value="bug">Report malfunction</option>
+                  <option value="feature">Enhancement request</option>
+                  <option value="other">General protocol</option>
                 </select>
               </div>
-              <div className="field-group">
-                <label>Communication</label>
-                <textarea id="fb-msg" className="form-input" rows={5} placeholder="Your message to the developers..." value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required />
+
+              <div>
+                <label className="field-label" htmlFor="fb-msg">Communication</label>
+                <textarea
+                  id="fb-msg"
+                  className="dark-textarea"
+                  rows={5}
+                  placeholder="Your message to the developers..."
+                  value={form.message}
+                  onChange={e => setForm({ ...form, message: e.target.value })}
+                  required
+                />
               </div>
-              <div className="field-group">
-                <label>Contact Endpoint (Optional)</label>
-                <input id="fb-email" className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+
+              <div>
+                <label className="field-label" htmlFor="fb-email">Contact endpoint (optional)</label>
+                <input
+                  id="fb-email"
+                  className="dark-input"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                />
               </div>
-            </div>
+            </>
           )}
 
-          <button id="modal-submit" type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '32px', padding: '16px' }}>
-            {loading ? 'Transmitting...' : (type === 'submit' ? 'Lodge Dispute' : type.includes('edit') ? 'Update Record' : type === 'create-domain' ? 'Establish Domain' : 'Send Feedback')}
+          <button id="modal-submit" type="submit" className="btn-primary mt-1 w-full" disabled={loading}>
+            {loading ? 'Transmitting...' : submitLabels[type]}
           </button>
         </form>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   );
 };
 

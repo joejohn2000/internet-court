@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import axios, { API } from '../../lib/api';
 
 const getList = (data) => (Array.isArray(data) ? data : data?.results || []);
+const panelClasses = 'rounded-md border border-white/10 bg-black/72 p-4 shadow-[0_16px_36px_rgba(0,0,0,0.24)] sm:p-6';
 
 const emptyAdmin = {
   new_username: '',
@@ -66,109 +67,121 @@ const AdminOperatorsPage = ({ showToast }) => {
   const admins = users.filter(item => item.is_admin);
 
   return (
-    <div className="admin-two-column">
-      <section className="admin-panel">
-        <div className="admin-section-heading">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:items-start">
+      <section className={panelClasses}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="admin-eyebrow">Access</p>
-            <h2 className="font-serif">Create operator</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">Access</p>
+            <h2 className="mt-2 font-serif text-2xl text-white">Create operator</h2>
           </div>
-          <Shield size={24} />
+          <Shield size={22} className="text-amber-300" />
         </div>
 
-        <form className="admin-form" onSubmit={createAdmin}>
-          <div className="field-group">
-            <label htmlFor="new-admin-user">Username</label>
+        <form className="mt-5 grid gap-4" onSubmit={createAdmin}>
+          <div>
+            <label htmlFor="new-admin-user" className="field-label">Username</label>
             <input
               id="new-admin-user"
-              className="form-input"
+              className="dark-input"
               value={newAdmin.new_username}
               onChange={event => updateAdmin('new_username', event.target.value)}
               required
             />
           </div>
 
-          <div className="field-group">
-            <label htmlFor="new-admin-email">Email</label>
+          <div>
+            <label htmlFor="new-admin-email" className="field-label">Email</label>
             <input
               id="new-admin-email"
-              className="form-input"
+              className="dark-input"
               type="email"
               value={newAdmin.new_email}
               onChange={event => updateAdmin('new_email', event.target.value)}
             />
           </div>
 
-          <div className="field-group">
-            <label htmlFor="new-admin-pw">Initial password</label>
-            <div className="admin-password-field">
+          <div>
+            <label htmlFor="new-admin-pw" className="field-label">Initial password</label>
+            <div className="relative">
               <input
                 id="new-admin-pw"
-                className="form-input"
+                className="dark-input pr-12"
                 type={showNewPassword ? 'text' : 'password'}
                 value={newAdmin.new_password}
                 onChange={event => updateAdmin('new_password', event.target.value)}
                 required
               />
-              <button type="button" aria-label="Show or hide initial password" onClick={() => setShowNewPassword(current => !current)}>
+              <button
+                type="button"
+                aria-label="Show or hide initial password"
+                onClick={() => setShowNewPassword(current => !current)}
+                className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
                 {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          <div className="admin-form-divider" />
+          <div className="h-px bg-white/10" />
 
-          <div className="field-group">
-            <label htmlFor="auth-admin-pw">Your admin password</label>
-            <div className="admin-password-field">
+          <div>
+            <label htmlFor="auth-admin-pw" className="field-label">Your admin password</label>
+            <div className="relative">
               <input
                 id="auth-admin-pw"
-                className="form-input"
+                className="dark-input pr-12"
                 type={showAuthPassword ? 'text' : 'password'}
                 value={newAdmin.admin_password}
                 onChange={event => updateAdmin('admin_password', event.target.value)}
                 required
               />
-              <button type="button" aria-label="Show or hide your password" onClick={() => setShowAuthPassword(current => !current)}>
+              <button
+                type="button"
+                aria-label="Show or hide your password"
+                onClick={() => setShowAuthPassword(current => !current)}
+                className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
                 {showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          <button id="create-admin-btn" className="btn btn-primary" type="submit" disabled={creating}>
+          <button id="create-admin-btn" className="btn-primary mt-1 w-full" type="submit" disabled={creating}>
             <PlusCircle size={18} />
             {creating ? 'Creating...' : 'Create Operator'}
           </button>
         </form>
       </section>
 
-      <section className="admin-panel">
-        <div className="admin-section-heading">
+      <section className={panelClasses}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="admin-eyebrow">Directory</p>
-            <h2 className="font-serif">Users and admins</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">Directory</p>
+            <h2 className="mt-2 font-serif text-2xl text-white">Users and admins</h2>
           </div>
-          <div className="admin-mini-stat">
+          <div className="inline-flex items-center gap-2 text-sm font-semibold text-teal-300">
             <Users size={18} />
             <span>{admins.length} admins</span>
           </div>
         </div>
 
-        {loading && <div className="admin-empty-state">Loading users...</div>}
-        {error && <div className="admin-empty-state error">{error}</div>}
+        {loading && <div className="mt-5 rounded-md border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">Loading users...</div>}
+        {error && <div className="mt-5 rounded-md border border-rose-400/20 bg-rose-500/10 px-4 py-6 text-sm text-rose-200">{error}</div>}
 
         {!loading && !error && (
-          <div className="admin-card-list always-visible">
+          <div className="mt-5 grid gap-3">
             {users.map(item => (
-              <article className="admin-list-card" key={item.id}>
-                <div>
-                  <strong>{item.username}</strong>
-                  <span>#{item.id}</span>
+              <article className="rounded-md border border-white/10 bg-white/5 p-4" key={item.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <strong className="block text-base text-white">{item.username}</strong>
+                    <span className="mt-1 block text-sm text-slate-400">#{item.id}</span>
+                  </div>
+                  <span className={item.is_admin ? 'status-badge-admin' : 'status-badge border-white/12 bg-white/6 text-slate-200'}>
+                    {item.is_admin ? 'Admin' : 'Citizen'}
+                  </span>
                 </div>
-                <p>{item.email || 'No email on file'}</p>
-                <span className={`admin-badge ${item.is_admin ? 'badge-admin' : ''}`}>
-                  {item.is_admin ? 'Admin' : 'Citizen'}
-                </span>
+                <p className="mt-3 text-sm text-slate-400">{item.email || 'No email on file'}</p>
               </article>
             ))}
           </div>

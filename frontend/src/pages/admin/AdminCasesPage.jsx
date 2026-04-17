@@ -5,8 +5,8 @@ import Modal from '../../components/Modal';
 import axios, { API } from '../../lib/api';
 
 const getList = (data) => (Array.isArray(data) ? data : data?.results || []);
-
 const emptyFilters = { name: '', status: '', category: '' };
+const panelClasses = 'rounded-md border border-white/10 bg-black/72 p-4 shadow-[0_16px_36px_rgba(0,0,0,0.24)] sm:p-6';
 
 const AdminCasesPage = ({ showToast }) => {
   const [cases, setCases] = useState([]);
@@ -49,7 +49,9 @@ const AdminCasesPage = ({ showToast }) => {
     };
 
     fetchCategories();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -78,16 +80,16 @@ const AdminCasesPage = ({ showToast }) => {
   };
 
   return (
-    <div className="admin-page-stack">
-      <section className="admin-panel">
-        <form className="admin-filter-bar" onSubmit={applyFilters}>
-          <div className="field-group admin-search-field">
-            <label htmlFor="admin-case-search">Search cases</label>
-            <div className="admin-input-icon">
-              <Search size={16} />
+    <div className="grid gap-5 sm:gap-6">
+      <section className={panelClasses}>
+        <form className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_auto]" onSubmit={applyFilters}>
+          <div>
+            <label htmlFor="admin-case-search" className="field-label">Search cases</label>
+            <div className="relative">
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 id="admin-case-search"
-                className="form-input"
+                className="dark-input pl-10"
                 placeholder="Name, author, or case hook"
                 value={filters.name}
                 onChange={event => setFilters(current => ({ ...current, name: event.target.value }))}
@@ -95,11 +97,11 @@ const AdminCasesPage = ({ showToast }) => {
             </div>
           </div>
 
-          <div className="field-group">
-            <label htmlFor="admin-case-status">Status</label>
+          <div>
+            <label htmlFor="admin-case-status" className="field-label">Status</label>
             <select
               id="admin-case-status"
-              className="form-input"
+              className="dark-select"
               value={filters.status}
               onChange={event => setFilters(current => ({ ...current, status: event.target.value }))}
             >
@@ -109,11 +111,11 @@ const AdminCasesPage = ({ showToast }) => {
             </select>
           </div>
 
-          <div className="field-group">
-            <label htmlFor="admin-case-domain">Domain</label>
+          <div>
+            <label htmlFor="admin-case-domain" className="field-label">Domain</label>
             <select
               id="admin-case-domain"
-              className="form-input"
+              className="dark-select"
               value={filters.category}
               onChange={event => setFilters(current => ({ ...current, category: event.target.value }))}
             >
@@ -124,12 +126,12 @@ const AdminCasesPage = ({ showToast }) => {
             </select>
           </div>
 
-          <div className="admin-filter-actions">
-            <button className="btn btn-primary" type="submit">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:self-end">
+            <button className="btn-primary w-full" type="submit">
               <Filter size={18} />
               Apply
             </button>
-            <button className="btn btn-glass" type="button" onClick={clearFilters}>
+            <button className="btn-secondary w-full" type="button" onClick={clearFilters}>
               <XCircle size={18} />
               Clear
             </button>
@@ -137,92 +139,98 @@ const AdminCasesPage = ({ showToast }) => {
         </form>
       </section>
 
-      <section className="admin-panel">
-        <div className="admin-section-heading">
+      <section className={panelClasses}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="admin-eyebrow">Docket</p>
-            <h2 className="font-serif">Case files</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">Docket</p>
+            <h2 className="mt-2 font-serif text-2xl text-white">Case files</h2>
           </div>
-          <p>{cases.length} matching {cases.length === 1 ? 'case' : 'cases'}</p>
+          <p className="text-sm text-slate-400">{cases.length} matching {cases.length === 1 ? 'case' : 'cases'}</p>
         </div>
 
-        {loading && <div className="admin-empty-state">Loading case files...</div>}
-        {error && <div className="admin-empty-state error">{error}</div>}
+        {loading && <div className="mt-5 rounded-md border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">Loading case files...</div>}
+        {error && <div className="mt-5 rounded-md border border-rose-400/20 bg-rose-500/10 px-4 py-6 text-sm text-rose-200">{error}</div>}
 
         {!loading && !error && (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Case</th>
-                  <th>Domain</th>
-                  <th>Votes</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cases.length === 0 && (
+          <div className="mt-5">
+            <div className="table-shell">
+              <table className="table-base">
+                <thead>
                   <tr>
-                    <td colSpan="5">No matching case files found.</td>
+                    <th>Case</th>
+                    <th>Domain</th>
+                    <th>Votes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                )}
-                {cases.map(item => (
-                  <tr key={item.id}>
-                    <td>
-                      <strong>{item.title_hook}</strong>
-                      <span>Author: {item.author_name}</span>
-                    </td>
-                    <td>{item.category?.name || 'Unassigned'}</td>
-                    <td>
-                      <span className="admin-vote-row">
-                        <b className="vote-guilty">{item.votes_guilty} G</b>
-                        <b className="vote-esh">{item.votes_esh} E</b>
-                        <b className="vote-clear">{item.votes_not_guilty} N</b>
-                      </span>
-                      <span>{item.total_votes} total</span>
-                    </td>
-                    <td>
-                      <span className={`admin-badge ${item.status === 'open' ? 'badge-open' : 'badge-closed'}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="admin-row-actions">
-                        <button className="admin-icon-button" type="button" aria-label={`Edit ${item.title_hook}`} onClick={() => setEditingCase(item)}>
-                          <Edit size={18} />
-                        </button>
-                        <button className="admin-icon-button danger" type="button" aria-label={`Delete ${item.title_hook}`} onClick={() => handleDeleteCase(item.id)}>
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {cases.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="text-slate-400">No matching case files found.</td>
+                    </tr>
+                  )}
+                  {cases.map(item => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.title_hook}</strong>
+                        <span className="mt-1 block text-slate-400">Author: {item.author_name || 'Anonymous'}</span>
+                      </td>
+                      <td>{item.category?.name || 'Unassigned'}</td>
+                      <td>
+                        <span className="flex flex-wrap gap-2">
+                          <b className="text-rose-300">{item.votes_guilty} G</b>
+                          <b className="text-amber-200">{item.votes_esh} E</b>
+                          <b className="text-emerald-300">{item.votes_not_guilty} N</b>
+                        </span>
+                        <span className="mt-1 block text-slate-400">{item.total_votes} total</span>
+                      </td>
+                      <td>
+                        <span className={item.status === 'open' ? 'status-badge-open' : 'status-badge-closed'}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex gap-2">
+                          <button className="icon-button h-10 w-10" type="button" aria-label={`Edit ${item.title_hook}`} onClick={() => setEditingCase(item)}>
+                            <Edit size={16} />
+                          </button>
+                          <button className="icon-button h-10 w-10 border-rose-500/20 text-rose-200 hover:bg-rose-500/10" type="button" aria-label={`Delete ${item.title_hook}`} onClick={() => handleDeleteCase(item.id)}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            <div className="admin-card-list" aria-label="Case files">
-              {cases.length === 0 && <div className="admin-empty-state">No matching case files found.</div>}
+            <div className="info-card-list">
+              {cases.length === 0 && (
+                <div className="rounded-md border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-400">
+                  No matching case files found.
+                </div>
+              )}
               {cases.map(item => (
-                <article className="admin-list-card" key={item.id}>
-                  <div>
-                    <strong>{item.title_hook}</strong>
-                    <span>{item.category?.name || 'Unassigned'}</span>
-                  </div>
-                  <p>Author: {item.author_name}</p>
-                  <div className="admin-card-meta">
-                    <span className={`admin-badge ${item.status === 'open' ? 'badge-open' : 'badge-closed'}`}>
+                <article className="rounded-md border border-white/10 bg-white/5 p-4" key={item.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <strong className="block text-base text-white">{item.title_hook}</strong>
+                      <span className="mt-1 block text-sm text-slate-400">{item.category?.name || 'Unassigned'}</span>
+                    </div>
+                    <span className={item.status === 'open' ? 'status-badge-open' : 'status-badge-closed'}>
                       {item.status}
                     </span>
-                    <span>{item.total_votes} votes</span>
                   </div>
-                  <div className="admin-row-actions">
-                    <button className="btn btn-glass" type="button" onClick={() => setEditingCase(item)}>
+                  <p className="mt-3 text-sm text-slate-400">Author: {item.author_name || 'Anonymous'}</p>
+                  <p className="mt-2 text-sm text-slate-400">{item.total_votes} votes recorded</p>
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button className="btn-secondary w-full" type="button" onClick={() => setEditingCase(item)}>
                       <Edit size={18} />
                       Edit
                     </button>
-                    <button className="btn btn-glass danger-text" type="button" onClick={() => handleDeleteCase(item.id)}>
+                    <button className="btn-secondary w-full border-rose-500/20 text-rose-200 hover:bg-rose-500/10" type="button" onClick={() => handleDeleteCase(item.id)}>
                       <Trash2 size={18} />
                       Delete
                     </button>
