@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
@@ -841,7 +841,7 @@ const HomePage = ({ user, onLogout, showToast, setPage }) => {
             <LayoutGroup>
               <motion.div layout style={{ display: 'grid', gap: '24px' }}>
                 {loading ? (
-                  <p style={{ color: 'var(--text-dim)' }}>Accessing database...</p>
+                  <DatabaseLoader />
                 ) : cases.length === 0 ? (
                   <div className="glass" style={{ padding: '60px', textAlign: 'center', borderRadius: '24px' }}>
                     <MessageCircle size={48} color="var(--text-dim)" style={{ marginBottom: '20px' }} />
@@ -885,6 +885,44 @@ const HomePage = ({ user, onLogout, showToast, setPage }) => {
     </div>
   );
 };
+
+const DatabaseLoader = () => (
+  <motion.div
+    {...fadeIn}
+    className="database-loader glass"
+    role="status"
+    aria-live="polite"
+    aria-busy="true"
+  >
+    <div className="database-loader-topline">
+      <div className="database-loader-badge">
+        <Layers size={16} />
+        <span>Live Docket Sync</span>
+      </div>
+      <span className="database-loader-status">Connecting</span>
+    </div>
+
+    <div className="database-loader-copy">
+      <h3>Accessing database...</h3>
+      <p>Pulling active casefiles and categories so the docket opens fully loaded.</p>
+    </div>
+
+    <div className="database-loader-progress" aria-hidden="true">
+      <span />
+    </div>
+
+    <div className="database-loader-preview" aria-hidden="true">
+      {[0, 1, 2].map((slot) => (
+        <div key={slot} className="database-loader-row">
+          <span className="database-loader-chip" />
+          <span className="database-loader-line database-loader-line-title" />
+          <span className="database-loader-line" />
+          <span className="database-loader-line database-loader-line-short" />
+        </div>
+      ))}
+    </div>
+  </motion.div>
+);
 
 /* ── CaseCard ── */
 const CaseCard = ({ item, isActive, onClick }) => {

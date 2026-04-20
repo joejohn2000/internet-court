@@ -276,6 +276,162 @@ h3,
   flex: 0 0 500px;
 }
 
+.database-loader {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: var(--radius-sharp);
+  isolation: isolate;
+}
+
+.database-loader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(202, 138, 4, 0.18) 0%, transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.database-loader-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.database-loader-badge,
+.database-loader-status {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.database-loader-badge {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.database-loader-status {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.database-loader-status::before {
+  content: '';
+  width: 9px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.45);
+  animation: database-pulse 1.6s ease-in-out infinite;
+}
+
+.database-loader-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  max-width: 48rem;
+}
+
+.database-loader-copy h3 {
+  color: #fff;
+  font-size: clamp(1.45rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.database-loader-copy p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  line-height: 1.65;
+}
+
+.database-loader-progress {
+  position: relative;
+  z-index: 1;
+  height: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.database-loader-progress span {
+  display: block;
+  width: 42%;
+  min-width: 120px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(202, 138, 4, 0) 0%,
+    rgba(202, 138, 4, 0.95) 30%,
+    rgba(255, 255, 255, 0.92) 50%,
+    rgba(202, 138, 4, 0) 100%
+  );
+  animation: database-sweep 1.4s ease-in-out infinite;
+}
+
+.database-loader-preview {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+
+.database-loader-row {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.database-loader-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  animation: database-shimmer 2.1s ease-in-out infinite;
+}
+
+.database-loader-chip,
+.database-loader-line {
+  display: block;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.database-loader-chip {
+  width: 78px;
+  height: 22px;
+  background: rgba(202, 138, 4, 0.34);
+}
+
+.database-loader-line {
+  height: 12px;
+}
+
+.database-loader-line-title {
+  width: 88%;
+  height: 18px;
+}
+
+.database-loader-line-short {
+  width: 58%;
+}
+
 .case-card {
   padding: 40px;
   margin-bottom: 32px;
@@ -521,6 +677,39 @@ h3,
   padding: 24px 60px !important;
 }
 
+@keyframes database-pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.32);
+  }
+
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 10px rgba(202, 138, 4, 0);
+  }
+}
+
+@keyframes database-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes database-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(140%);
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 1200px) {
   .auth-page {
@@ -651,6 +840,19 @@ h3,
     gap: 8px;
   }
 
+  .database-loader {
+    gap: 16px;
+  }
+
+  .database-loader-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .database-loader-row {
+    padding: 14px;
+    gap: 10px;
+  }
+
   .modal-content {
     padding: 24px;
     max-width: calc(100vw - 32px);
@@ -693,6 +895,29 @@ h3,
 
   .main-content {
     padding: 88px 12px 28px;
+  }
+
+  .database-loader {
+    gap: 14px;
+    padding: 18px 16px;
+  }
+
+  .database-loader-badge,
+  .database-loader-status {
+    font-size: 0.64rem;
+  }
+
+  .database-loader-copy p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .database-loader-row {
+    padding: 12px;
+  }
+
+  .database-loader-preview .database-loader-row:last-child {
+    display: none;
   }
 
   .auth-title {
@@ -808,4 +1033,12 @@ h3,
   border-color: var(--accent);
   background: #fff;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .database-loader-status::before,
+  .database-loader-progress span,
+  .database-loader-row::after {
+    animation: none;
+  }
 }
