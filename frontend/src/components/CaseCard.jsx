@@ -11,17 +11,21 @@ import {
 
 const CaseCard = ({ item, isActive, onClick, cardRef }) => {
   const MotionButton = motion.button;
+  const canViewDistribution = Boolean(item.can_view_distribution);
   const total = item.total_votes || 0;
-  const guilty = total ? Math.round((item.votes_guilty / total) * 100) : 0;
-  const esh = total ? Math.round((item.votes_esh / total) * 100) : 0;
-  const notGuilty = total ? Math.round((item.votes_not_guilty / total) * 100) : 0;
+  const guiltyVotes = item.votes_guilty ?? 0;
+  const eshVotes = item.votes_esh ?? 0;
+  const notGuiltyVotes = item.votes_not_guilty ?? 0;
+  const guilty = total ? Math.round((guiltyVotes / total) * 100) : 0;
+  const esh = total ? Math.round((eshVotes / total) * 100) : 0;
+  const notGuilty = total ? Math.round((notGuiltyVotes / total) * 100) : 0;
 
   const stats = [
     {
       key: 'guilty',
       icon: ThumbsUp,
       label: 'Guilty',
-      count: item.votes_guilty,
+      count: guiltyVotes,
       percent: guilty,
       tone: 'text-rose-300'
     },
@@ -29,7 +33,7 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
       key: 'neutral',
       icon: MessageCircle,
       label: 'Neutral',
-      count: item.votes_esh,
+      count: eshVotes,
       percent: esh,
       tone: 'text-amber-200'
     },
@@ -37,7 +41,7 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
       key: 'not-guilty',
       icon: ThumbsDown,
       label: 'Not guilty',
-      count: item.votes_not_guilty,
+      count: notGuiltyVotes,
       percent: notGuilty,
       tone: 'text-emerald-300'
     }
@@ -76,7 +80,7 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
         </div>
       </header>
 
-      {total > 0 && (
+      {canViewDistribution && total > 0 && (
         <div className="mt-4 space-y-3">
           <div className="vote-track-dark">
             <div className="bg-rose-600" style={{ width: `${guilty}%` }} />
@@ -96,6 +100,12 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
             </span>
           </div>
         </div>
+      )}
+
+      {!canViewDistribution && (
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
+          Vote distribution unlocks after you vote or when the court timer ends.
+        </p>
       )}
 
       <footer className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/8 pt-4 text-sm text-slate-300">

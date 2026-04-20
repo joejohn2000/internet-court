@@ -2,7 +2,6 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
-from datetime import timedelta
 from apps.cases.models import Case
 from apps.cases.serializers import CaseSerializer
 
@@ -85,8 +84,7 @@ class CaseViewSet(viewsets.ModelViewSet):
             if not case.judge_analysis.startswith("JUDGE OPINION ON DOCKET"):
                 return Response({'judge_analysis': case.judge_analysis}, status=status.HTTP_200_OK)
             
-        time_since_creation = timezone.now() - case.created_at
-        if time_since_creation < timedelta(minutes=1):
+        if case.verdict_timer_ends and timezone.now() < case.verdict_timer_ends:
             return Response({'error': 'Judge analysis is still locked.'}, status=status.HTTP_400_BAD_REQUEST)
             
         from apps.cases.utils import generate_ai_analysis

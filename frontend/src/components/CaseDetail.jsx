@@ -10,7 +10,7 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
   const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisFailed, setAnalysisFailed] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(60);
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
   const triggerJudgeAnalysis = useCallback(async () => {
     setAnalysisLoading(true);
@@ -26,9 +26,8 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
   }, [item.id, showToast]);
 
   useEffect(() => {
-    if (!item.created_at) return;
-    const createdAt = new Date(item.created_at).getTime();
-    const unlockTime = createdAt + 60 * 1000;
+    if (!item.verdict_timer_ends) return;
+    const unlockTime = new Date(item.verdict_timer_ends).getTime();
 
     const tick = () => {
       const now = Date.now();
@@ -44,14 +43,14 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
         const remaining = tick();
         if (remaining === 0) {
           clearInterval(interval);
-          if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
+          if (item.can_view_ai_verdict && !judgeAnalysis && !analysisLoading && !analysisFailed) {
             triggerTimer = window.setTimeout(() => {
               triggerJudgeAnalysis();
             }, 0);
           }
         }
       }, 1000);
-    } else if (!judgeAnalysis && !analysisLoading && !analysisFailed) {
+    } else if (item.can_view_ai_verdict && !judgeAnalysis && !analysisLoading && !analysisFailed) {
       triggerTimer = window.setTimeout(() => {
         triggerJudgeAnalysis();
       }, 0);
@@ -61,9 +60,11 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
       if (interval) clearInterval(interval);
       if (triggerTimer) window.clearTimeout(triggerTimer);
     };
-  }, [item.created_at, judgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
+  }, [item.verdict_timer_ends, item.can_view_ai_verdict, judgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
 
   const hasActuallyVoted = optimisticVoted || item.user_has_voted;
+  const canViewDistribution = Boolean(item.can_view_distribution) || optimisticVoted;
+  const canViewAIVerdict = Boolean(item.can_view_ai_verdict);
 
   const handleVote = async (decision) => {
     setLoading(true);
@@ -79,26 +80,29 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
   };
 
   const total = item.total_votes || 0;
+  const guiltyVotes = item.votes_guilty ?? 0;
+  const eshVotes = item.votes_esh ?? 0;
+  const notGuiltyVotes = item.votes_not_guilty ?? 0;
   const voteData = [
     {
       label: 'Guilty',
       key: 'guilty',
-      votes: item.votes_guilty,
-      percent: total > 0 ? Math.round((item.votes_guilty / total) * 100) : 0,
+      votes: guiltyVotes,
+      percent: total > 0 ? Math.round((guiltyVotes / total) * 100) : 0,
       barClass: 'bg-rose-600'
     },
     {
       label: 'Neutral',
       key: 'neutral',
-      votes: item.votes_esh,
-      percent: total > 0 ? Math.round((item.votes_esh / total) * 100) : 0,
+      votes: eshVotes,
+      percent: total > 0 ? Math.round((eshVotes / total) * 100) : 0,
       barClass: 'bg-amber-600'
     },
     {
       label: 'Not guilty',
       key: 'not-guilty',
-      votes: item.votes_not_guilty,
-      percent: total > 0 ? Math.round((item.votes_not_guilty / total) * 100) : 0,
+      votes: notGuiltyVotes,
+      percent: total > 0 ? Math.round((notGuiltyVotes / total) * 100) : 0,
       barClass: 'bg-emerald-600'
     }
   ];
@@ -176,21 +180,29 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
             <span className="text-sm font-semibold text-slate-600">{total} total verdicts</span>
           </header>
 
-          <div className="vote-track">
-            {voteData.map(({ key, percent, barClass }) => (
-              <div key={key} className={barClass} style={{ width: `${percent}%` }} />
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {voteData.map(({ key, label, votes, percent }) => (
-              <div key={key} className="rounded-md border border-slate-900/8 bg-white/70 px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{percent}%</p>
-                <p className="text-sm text-slate-600">{votes} votes</p>
+          {canViewDistribution ? (
+            <>
+              <div className="vote-track">
+                {voteData.map(({ key, percent, barClass }) => (
+                  <div key={key} className={barClass} style={{ width: `${percent}%` }} />
+                ))}
               </div>
-            ))}
-          </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {voteData.map(({ key, label, votes, percent }) => (
+                  <div key={key} className="rounded-md border border-slate-900/8 bg-white/70 px-4 py-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">{percent}%</p>
+                    <p className="text-sm text-slate-600">{votes} votes</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm leading-6 text-slate-600">
+              Vote percentages are hidden until you cast a vote or the 12-hour debate window ends.
+            </p>
+          )}
         </div>
       </section>
 
@@ -201,14 +213,15 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
         </h2>
 
         <div className="mt-4 rounded-md border border-slate-900/10 bg-white/85 p-4 sm:p-5">
-          {timeRemaining > 0 ? (
+          {!canViewAIVerdict ? (
             <div className="flex flex-col items-center text-center">
               <Lock size={42} className="text-slate-500" />
               <h3 className="mt-4 text-lg font-bold uppercase tracking-[0.12em] text-slate-900">
                 Chambers locked
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
-                The AI Judge is reviewing evidence. Opinion releases in <strong>{timeRemaining}</strong> seconds.
+                The AI Judge is reviewing evidence. Opinion releases in{' '}
+                <strong>{Math.max(timeRemaining, 0)}</strong> seconds.
               </p>
             </div>
           ) : analysisLoading ? (
