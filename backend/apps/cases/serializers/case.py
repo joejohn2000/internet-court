@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.utils import timezone
 from apps.cases.models import Case, Category
 from .category import CategorySerializer
 from .comment import CommentSerializer
+from core.request import get_client_ip
 
 
 class CaseSerializer(serializers.ModelSerializer):
@@ -11,6 +13,7 @@ class CaseSerializer(serializers.ModelSerializer):
     )
     author_name = serializers.SerializerMethodField(read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    judge_analysis = serializers.SerializerMethodField()
 
     # Vote counts
     votes_guilty = serializers.SerializerMethodField()
@@ -18,6 +21,8 @@ class CaseSerializer(serializers.ModelSerializer):
     votes_esh = serializers.SerializerMethodField()
     total_votes = serializers.SerializerMethodField()
     user_has_voted = serializers.SerializerMethodField()
+    can_view_distribution = serializers.SerializerMethodField()
+    can_view_ai_verdict = serializers.SerializerMethodField()
 
     class Meta:
         model = Case
@@ -26,9 +31,26 @@ class CaseSerializer(serializers.ModelSerializer):
             'title_hook', 'ai_suggested_hook', 'full_story', 'judge_analysis',
             'status', 'verdict_timer_ends', 'created_at',
             'votes_guilty', 'votes_not_guilty', 'votes_esh', 
-            'total_votes', 'user_has_voted', 'comments',
+            'total_votes', 'user_has_voted', 'can_view_distribution', 'can_view_ai_verdict',
+            'comments',
         ]
         read_only_fields = ['verdict_timer_ends', 'ai_suggested_hook', 'judge_analysis']
+
+    def validate_title_hook(self, value):
+        value = value.strip()
+        if len(value) < 10:
+            raise serializers.ValidationError('Title hook must be at least 10 characters long.')
+        if len(value) > 255:
+            raise serializers.ValidationError('Title hook must be 255 characters or fewer.')
+        return value
+
+    def validate_full_story(self, value):
+        value = value.strip()
+        if len(value) < 30:
+            raise serializers.ValidationError('Story must be at least 30 characters long.')
+        if len(value) > 5000:
+            raise serializers.ValidationError('Story must be 5000 characters or fewer.')
+        return value
 
     def get_author_name(self, obj):
         if obj.author:
@@ -36,12 +58,18 @@ class CaseSerializer(serializers.ModelSerializer):
         return 'Anonymous'
 
     def get_votes_guilty(self, obj):
+        if not self._can_view_distribution(obj):
+            return None
         return obj.votes.filter(decision='guilty').count()
 
     def get_votes_not_guilty(self, obj):
+        if not self._can_view_distribution(obj):
+            return None
         return obj.votes.filter(decision='not_guilty').count()
 
     def get_votes_esh(self, obj):
+        if not self._can_view_distribution(obj):
+            return None
         return obj.votes.filter(decision='esh').count()
 
     def get_total_votes(self, obj):
@@ -49,14 +77,34 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def get_user_has_voted(self, obj):
         request = self.context.get('request')
-        if not request:
-            return False
-            
-        # Get client IP
-        x_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_for:
-            ip = x_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR')
+        if request and request.user and request.user.is_authenticated:
+            if obj.votes.filter(voter_id=request.user.id).exists():
+                return True
 
-        return obj.votes.filter(ip_address=ip).exists()
+        ip = self._get_client_ip()
+        return bool(ip and obj.votes.filter(ip_address=ip).exists())
+
+    def get_can_view_distribution(self, obj):
+        return self._can_view_distribution(obj)
+
+    def get_can_view_ai_verdict(self, obj):
+        return self._is_verdict_unlocked(obj)
+
+    def get_judge_analysis(self, obj):
+        if not self._is_verdict_unlocked(obj):
+            return None
+        return obj.judge_analysis
+
+    def _is_verdict_unlocked(self, obj):
+        if not obj.verdict_timer_ends:
+            return False
+        return timezone.now() >= obj.verdict_timer_ends
+
+    def _can_view_distribution(self, obj):
+        return self._is_verdict_unlocked(obj) or self.get_user_has_voted(obj)
+
+    def _get_client_ip(self):
+        request = self.context.get('request')
+        if not request:
+            return None
+        return get_client_ip(request)

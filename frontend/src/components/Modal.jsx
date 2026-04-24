@@ -27,7 +27,6 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
     hook: item?.title_hook || '',
     story: item?.full_story || '',
     category: item?.category?.name || item?.name || '',
-    author_name: item?.author_name || '',
     status: item?.status || 'open',
     slug: item?.slug || '',
     feedback_type: 'other',
@@ -36,6 +35,7 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
   });
   const [anon, setAnon] = useState(false);
   const [loading, setLoading] = useState(false);
+  const canPostAsSignedInUser = Boolean(user && !user.is_guest);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +47,7 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
           category_id: cat?.id,
           title_hook: form.hook,
           full_story: form.story,
-          author_name: anon ? '' : (form.author_name || user?.username || '')
+          post_anonymously: canPostAsSignedInUser ? anon : true
         });
         showToast('Case submitted to public record.');
       } else if (type === 'edit-case') {
@@ -135,7 +135,7 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
             </>
           ) : type === 'submit' || type === 'edit-case' ? (
             <>
-              {type === 'submit' && (
+              {type === 'submit' && canPostAsSignedInUser && (
                 <label className="flex items-start gap-3 rounded-md border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
                   <input
                     type="checkbox"
@@ -152,6 +152,12 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
                 </label>
               )}
 
+              {type === 'submit' && !canPostAsSignedInUser && (
+                <div className="rounded-md border border-dashed border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+                  Guest submissions are published anonymously. Sign in if you want your account attached to the docket.
+                </div>
+              )}
+
               {type === 'edit-case' && (
                 <div>
                   <label className="field-label" htmlFor="case-status">Operational status</label>
@@ -165,19 +171,6 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
                     <option value="open">Open for judging</option>
                     <option value="closed">Verdict reached</option>
                   </select>
-                </div>
-              )}
-
-              {type === 'submit' && !anon && (
-                <div>
-                  <label className="field-label" htmlFor="case-author">Display name</label>
-                  <input
-                    id="case-author"
-                    className="dark-input"
-                    placeholder={user?.username}
-                    value={form.author_name}
-                    onChange={e => setForm({ ...form, author_name: e.target.value })}
-                  />
                 </div>
               )}
 

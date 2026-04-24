@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Eye, EyeOff, PlusCircle, Shield, Users } from 'lucide-react';
 
-import { useAuth } from '../../context/AuthContext';
 import axios, { API } from '../../lib/api';
 
 const getList = (data) => (Array.isArray(data) ? data : data?.results || []);
@@ -10,17 +9,14 @@ const panelClasses = 'rounded-md border border-white/10 bg-black/72 p-4 shadow-[
 const emptyAdmin = {
   new_username: '',
   new_password: '',
-  new_email: '',
-  admin_password: ''
+  new_email: ''
 };
 
 const AdminOperatorsPage = ({ showToast }) => {
-  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [newAdmin, setNewAdmin] = useState(emptyAdmin);
   const [creating, setCreating] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -49,10 +45,7 @@ const AdminOperatorsPage = ({ showToast }) => {
     event.preventDefault();
     setCreating(true);
     try {
-      await axios.post(`${API}/users/create-admin/`, {
-        ...newAdmin,
-        admin_username: user.username
-      });
+      await axios.post(`${API}/users/create-admin/`, newAdmin);
       showToast('New administrator registered.');
       setNewAdmin(emptyAdmin);
       fetchUsers();
@@ -118,30 +111,6 @@ const AdminOperatorsPage = ({ showToast }) => {
                 className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white"
               >
                 {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="h-px bg-white/10" />
-
-          <div>
-            <label htmlFor="auth-admin-pw" className="field-label">Your admin password</label>
-            <div className="relative">
-              <input
-                id="auth-admin-pw"
-                className="dark-input pr-12"
-                type={showAuthPassword ? 'text' : 'password'}
-                value={newAdmin.admin_password}
-                onChange={event => updateAdmin('admin_password', event.target.value)}
-                required
-              />
-              <button
-                type="button"
-                aria-label="Show or hide your password"
-                onClick={() => setShowAuthPassword(current => !current)}
-                className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white"
-              >
-                {showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>

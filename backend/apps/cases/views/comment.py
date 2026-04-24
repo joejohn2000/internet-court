@@ -1,23 +1,24 @@
-from rest_framework import viewsets, permissions
+from rest_framework import mixins, permissions, viewsets
 from apps.cases.models import Comment
 from apps.cases.serializers import CommentSerializer
+from core.throttles import CommentCreateRateThrottle
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(mixins.CreateModelMixin,
+                     mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.AllowAny]
 
+    def get_throttles(self):
+        if self.action == 'create':
+            return [CommentCreateRateThrottle()]
+        return super().get_throttles()
+
     def perform_create(self, serializer):
-        from django.contrib.auth import get_user_model
         author = None
         if self.request.user and self.request.user.is_authenticated:
             author = self.request.user
-        else:
-            user_id = self.request.headers.get('X-User-Id') or self.request.META.get('HTTP_X_USER_ID')
-            if user_id:
-                try:
-                    author = get_user_model().objects.get(id=int(user_id))
-                except (ValueError, TypeError, get_user_model().DoesNotExist):
-                    pass
         serializer.save(author=author)

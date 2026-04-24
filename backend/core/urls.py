@@ -4,6 +4,7 @@ from rest_framework import routers
 from apps.cases.views import CaseViewSet, CategoryViewSet, CommentViewSet
 from apps.votes.views import VoteViewSet
 from apps.feedback.views import FeedbackViewSet
+from .views import healthz
 
 router = routers.DefaultRouter()
 router.register(r'cases', CaseViewSet, basename='case')
@@ -14,6 +15,7 @@ router.register(r'comments', CommentViewSet, basename='comment')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('healthz/', healthz, name='healthz'),
     path('api/users/', include('apps.users.urls')),
     path('api/', include(router.urls)),
 ]

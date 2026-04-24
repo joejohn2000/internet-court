@@ -1,28 +1,27 @@
-from django.contrib.auth import get_user_model, authenticate, login
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
+
+from core.throttles import LoginRateThrottle, RegisterRateThrottle
 
 
 def get_user_response(user):
-    refresh = RefreshToken.for_user(user)
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'is_admin': user.is_staff or user.is_superuser,
-        'access': str(refresh.access_token),
-        'refresh': str(refresh),
+        'access': str(AccessToken.for_user(user)),
     }
 
 
-@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([RegisterRateThrottle])
 def user_register(request):
     """Register a new normal user."""
     User = get_user_model()
@@ -54,14 +53,13 @@ def user_register(request):
     except Exception as e:
         print(f"History migration failed: {e}")
 
-    login(request, user)
     return Response(get_user_response(user), status=status.HTTP_201_CREATED)
 
 
-@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def user_login(request):
     """Login for normal users – returns basic user info."""
     username = request.data.get('username', '').strip()
@@ -74,16 +72,12 @@ def user_login(request):
     if user is None:
         return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    login(request, user)
     return Response(get_user_response(user))
 
 
-@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def user_logout(request):
-    """Terminates the session on the backend."""
-    from django.contrib.auth import logout
-    logout(request)
+    """JWT logout is handled client-side."""
     return Response({'status': 'Logged out.'}, status=status.HTTP_200_OK)

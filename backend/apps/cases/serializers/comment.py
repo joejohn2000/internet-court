@@ -14,3 +14,11 @@ class CommentSerializer(serializers.ModelSerializer):
         if obj.author:
             return obj.author.username
         return 'Anonymous'
+
+    def validate_content(self, value):
+        value = value.strip()
+        if len(value) < 3:
+            raise serializers.ValidationError('Comment must be at least 3 characters long.')
+        if len(value) > 2000:
+            raise serializers.ValidationError('Comment must be 2000 characters or fewer.')
+        return value

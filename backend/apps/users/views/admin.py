@@ -1,18 +1,18 @@
-from django.contrib.auth import get_user_model, authenticate, login
-from rest_framework import status, permissions
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.contrib.auth import authenticate, get_user_model
+from rest_framework import status
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from apps.feedback.models import Feedback
 
 from .auth import get_user_response
+from core.throttles import AdminLoginRateThrottle, CreateAdminRateThrottle
 
 
-@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([AdminLoginRateThrottle])
 def admin_login(request):
     """Login for admin users only."""
     username = request.data.get('username', '').strip()
@@ -28,25 +28,15 @@ def admin_login(request):
     if not (user.is_staff or user.is_superuser):
         return Response({'error': 'Admin access only.'}, status=status.HTTP_403_FORBIDDEN)
 
-    login(request, user)
     return Response(get_user_response(user))
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminUser])
+@throttle_classes([CreateAdminRateThrottle])
 def create_admin(request):
-    """
-    Create a new admin account.
-    """
+    """Create a new admin account."""
     User = get_user_model()
-    # Authorise the caller first
-    admin_username = request.data.get('admin_username', '').strip()
-    admin_password = request.data.get('admin_password', '').strip()
-    caller = authenticate(request, username=admin_username, password=admin_password)
-    if caller is None or not (caller.is_staff or caller.is_superuser):
-        return Response({'error': 'Invalid admin credentials.'}, status=status.HTTP_403_FORBIDDEN)
-
-    # Create new admin
     new_username = request.data.get('new_username', '').strip()
     new_password = request.data.get('new_password', '').strip()
     new_email = request.data.get('new_email', '').strip()
@@ -75,7 +65,15 @@ def admin_stats(request):
     feedback_count = Feedback.objects.count()
     from apps.cases.models import Case
     from apps.votes.models import Vote
-    users = [get_user_response(u) for u in get_user_model().objects.all().order_by('-id')]
+    users = [
+        {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_admin': user.is_staff or user.is_superuser,
+        }
+        for user in get_user_model().objects.all().order_by('-id')
+    ]
     
     return Response({
         'feedback_count': feedback_count,

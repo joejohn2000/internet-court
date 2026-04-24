@@ -1,10 +1,11 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import permissions, status, viewsets
+from rest_framework.response import Response
 from django.utils import timezone
-from datetime import timedelta
 from apps.cases.models import Case
 from apps.cases.serializers import CaseSerializer
+from core.request import get_client_ip
+from core.throttles import AIGenerationRateThrottle, CaseSubmitRateThrottle
 
 
 class CaseViewSet(viewsets.ModelViewSet):
@@ -41,52 +42,48 @@ class CaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
+        if self.action in ['request_ai_hook', 'generate_judge_analysis']:
+            return [permissions.IsAuthenticated()]
         if self.request.query_params.get('author_id'):
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
+    def get_throttles(self):
+        if self.action == 'create':
+            return [CaseSubmitRateThrottle()]
+        if self.action in ['request_ai_hook', 'generate_judge_analysis']:
+            return [AIGenerationRateThrottle()]
+        return super().get_throttles()
+
     def perform_create(self, serializer):
-        from django.contrib.auth import get_user_model
-        # Detect IP
-        x_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_for:
-            ip = x_for.split(',')[0].strip()
-        else:
-            ip = self.request.META.get('REMOTE_ADDR')
-
-        # Identify User (optional)
+        ip = get_client_ip(self.request)
         author = None
-        if self.request.user and self.request.user.is_authenticated:
+        post_anonymously = str(self.request.data.get('post_anonymously', '')).lower() in {'1', 'true', 'yes', 'on'}
+        if self.request.user and self.request.user.is_authenticated and not post_anonymously:
             author = self.request.user
-        else:
-            user_id = self.request.headers.get('X-User-Id') or self.request.META.get('HTTP_X_USER_ID')
-            if user_id:
-                try:
-                    author = get_user_model().objects.get(id=int(user_id))
-                except (ValueError, TypeError, get_user_model().DoesNotExist):
-                    pass
-
         serializer.save(author=author, ip_address=ip, status='open')
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):
         case = self.get_object()
+        if case.author_id not in {None, request.user.id} and not request.user.is_staff:
+            return Response({'error': 'You do not have permission to modify this case.'}, status=status.HTTP_403_FORBIDDEN)
         from apps.cases.utils import generate_ai_hook
         case.ai_suggested_hook = generate_ai_hook(case.title_hook, case.full_story)
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny], url_path='generate_judge_analysis')
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='generate_judge_analysis')
     def generate_judge_analysis(self, request, pk=None):
         case = self.get_object()
-        # If it's already generated and not forced refresh, return it
-        force_refresh = request.data.get('refresh', False)
+        force_refresh = bool(request.data.get('refresh', False))
+        if force_refresh and not request.user.is_staff:
+            return Response({'error': 'Only administrators can refresh judge analysis.'}, status=status.HTTP_403_FORBIDDEN)
         if case.judge_analysis and not force_refresh:
-            # If it's a mock one (starts with "JUDGE OPINION ON DOCKET" from old logic), we refresh anyway
             if not case.judge_analysis.startswith("JUDGE OPINION ON DOCKET"):
                 return Response({'judge_analysis': case.judge_analysis}, status=status.HTTP_200_OK)
             
-        time_since_creation = timezone.now() - case.created_at
-        if time_since_creation < timedelta(minutes=1):
+        if case.verdict_timer_ends and timezone.now() < case.verdict_timer_ends:
             return Response({'error': 'Judge analysis is still locked.'}, status=status.HTTP_400_BAD_REQUEST)
             
         from apps.cases.utils import generate_ai_analysis

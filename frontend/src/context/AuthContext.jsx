@@ -39,24 +39,12 @@ export const AuthProvider = ({ children, showToast }) => {
     const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
-        const originalRequest = error.config;
-        
-        // If 401 and not already retrying, try refresh
-        if (error.response?.status === 401 && !originalRequest._retry && user?.refresh) {
-          originalRequest._retry = true;
-          try {
-            const res = await axios.post(`${API}/users/token/refresh/`, { refresh: user.refresh });
-            const newUser = { ...user, access: res.data.access };
-            storeUser(newUser);
-            setUser(newUser);
-            
-            // Re-run original request with new token
-            originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
-            return axios(originalRequest);
-          } catch {
-            showToast("Session expired. Please log in again.", "error");
-            handleLogout();
-          }
+        const originalRequest = error.config || {};
+
+        if (error.response?.status === 401 && user && !originalRequest._handled401) {
+          originalRequest._handled401 = true;
+          showToast("Session expired. Please log in again.", "error");
+          handleLogout();
         }
         
         if (error.response && [403].includes(error.response.status)) {
