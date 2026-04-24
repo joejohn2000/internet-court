@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,6 +18,8 @@ import CaseCard from '../components/CaseCard';
 import CaseDetail from '../components/CaseDetail';
 import Modal from '../components/Modal';
 
+const loadingCaseCards = [1, 2, 3];
+
 const HomePage = ({ showToast }) => {
   const MotionDiv = motion.div;
   const MotionSection = motion.section;
@@ -29,9 +31,6 @@ const HomePage = ({ showToast }) => {
   const [modalType, setModalType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [detailOffset, setDetailOffset] = useState(0);
-  const feedScrollRef = useRef(null);
-  const caseCardRefs = useRef(new Map());
 
   const fetchContent = useCallback(async (syncSelection = false) => {
     try {
@@ -65,55 +64,6 @@ const HomePage = ({ showToast }) => {
     };
   }, [fetchContent]);
 
-  const setCaseCardRef = useCallback((caseId, node) => {
-    if (node) {
-      caseCardRefs.current.set(caseId, node);
-      return;
-    }
-
-    caseCardRefs.current.delete(caseId);
-  }, []);
-
-  const syncDetailOffset = useCallback((caseId) => {
-    if (typeof window === 'undefined' || window.innerWidth < 1280) {
-      setDetailOffset(0);
-      return;
-    }
-
-    const feedScroll = feedScrollRef.current;
-    const caseCard = caseCardRefs.current.get(caseId);
-
-    if (!feedScroll || !caseCard) {
-      setDetailOffset(0);
-      return;
-    }
-
-    const feedScrollRect = feedScroll.getBoundingClientRect();
-    const caseCardRect = caseCard.getBoundingClientRect();
-    const nextOffset = Math.max(0, caseCardRect.top - feedScrollRect.top);
-
-    setDetailOffset(nextOffset);
-  }, []);
-
-  useEffect(() => {
-    if (!selectedCase) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      syncDetailOffset(selectedCase.id);
-    });
-
-    const handleResize = () => {
-      syncDetailOffset(selectedCase.id);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [selectedCase, syncDetailOffset, cases.length]);
-
   const openCase = (nextCase) => {
     setSelectedCase(nextCase);
     if (window.matchMedia('(max-width: 1279px)').matches) {
@@ -136,7 +86,6 @@ const HomePage = ({ showToast }) => {
               className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1 text-left transition hover:bg-white/5"
               onClick={() => {
                 setSelectedCase(null);
-                setDetailOffset(0);
               }}
             >
               <img
@@ -239,13 +188,44 @@ const HomePage = ({ showToast }) => {
             <LayoutGroup>
               <MotionDiv
                 layout
-                ref={feedScrollRef}
                 className="grid gap-4 sm:gap-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-2"
               >
                 {loading ? (
-                  <div className="section-card p-5 text-sm text-slate-300 sm:p-6">
-                    Accessing database...
-                  </div>
+                  loadingCaseCards.map((card) => (
+                    <div key={card} className="docket-loading-card" aria-hidden="true">
+                      <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <span className="docket-loading-kicker w-24" />
+                          <span className="docket-loading-line mt-3 w-[82%]" />
+                          <span className="docket-loading-line mt-2 w-[64%]" />
+                        </div>
+                        <span className="docket-loading-pill w-28" />
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="docket-loading-meter">
+                          <span className="w-[34%]" />
+                          <span className="w-[27%]" />
+                          <span className="w-[39%]" />
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap gap-3">
+                            <span className="docket-loading-chip w-20" />
+                            <span className="docket-loading-chip w-24" />
+                            <span className="docket-loading-chip w-26" />
+                          </div>
+                          <span className="docket-loading-chip w-18" />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-3 border-t border-white/8 pt-4">
+                        <span className="docket-loading-avatar" />
+                        <span className="docket-loading-line w-40 max-w-[45%]" />
+                        <span className="ml-auto docket-loading-chevron" />
+                      </div>
+                    </div>
+                  ))
                 ) : cases.length === 0 ? (
                   <div className="section-card p-6 text-center sm:p-10">
                     <MessageCircle size={42} className="mx-auto text-slate-500" />
@@ -259,7 +239,6 @@ const HomePage = ({ showToast }) => {
                       key={c.id}
                       item={c}
                       isActive={selectedCase?.id === c.id}
-                      cardRef={node => setCaseCardRef(c.id, node)}
                       onClick={() => openCase(c)}
                     />
                   ))
