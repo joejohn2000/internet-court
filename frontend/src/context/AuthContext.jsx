@@ -39,23 +39,32 @@ export const AuthProvider = ({ children, showToast }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config || {};
+        const status = error.response?.status;
 
-        if (error.response?.status === 401 && user && !originalRequest._handled401) {
+        if (status === 401 && user && !originalRequest._handled401) {
           originalRequest._handled401 = true;
           showToast("Session expired. Please log in again.", "error");
           handleLogout();
         }
         
-        if (error.response && [403].includes(error.response.status)) {
+        if (status && [403].includes(status)) {
            // For 403 (Forbidden), usually means admin only or specific access denied
            showToast("Access Denied: Restricted Zone.", "error");
+        }
+
+        if ((!status || status >= 500) && !originalRequest._handledServerError) {
+          originalRequest._handledServerError = true;
+          clearUser();
+          setUser(null);
+          showToast("Server error detected. Returning to landing page.", "error");
+          navigate('/', { replace: true });
         }
         
         return Promise.reject(error);
       }
     );
     return () => axios.interceptors.response.eject(responseInterceptor);
-  }, [user, handleLogout, showToast]);
+  }, [user, handleLogout, navigate, showToast]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, handleAuthSuccess, handleLogout, handleGuest }}>

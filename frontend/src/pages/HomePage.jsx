@@ -48,7 +48,7 @@ const FilterChip = ({ label, active, onClick, icon: Icon }) => (
 
 // ─── Sidebar Nav Item ──────────────────────────────────────────────────────
 const SideNavItem = ({
-  icon: Icon,
+  icon,
   label,
   onClick,
   variant = 'default',
@@ -93,7 +93,7 @@ const SideNavItem = ({
                 : 'bg-white/5 text-slate-400 group-hover:bg-white/10 group-hover:text-slate-200'
           }`}
       >
-        <Icon size={15} />
+        {icon ? React.createElement(icon, { size: 15 }) : null}
       </span>
 
       {/* Label + accessories — slide in/out with the sidebar */}

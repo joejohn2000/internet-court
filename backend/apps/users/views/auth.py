@@ -3,7 +3,11 @@ from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
+
+try:
+    from rest_framework_simplejwt.tokens import AccessToken
+except ImportError:  # pragma: no cover - local fallback for incomplete dev envs
+    AccessToken = None
 
 from core.throttles import LoginRateThrottle, RegisterRateThrottle
 
@@ -14,7 +18,7 @@ def get_user_response(user):
         'username': user.username,
         'email': user.email,
         'is_admin': user.is_staff or user.is_superuser,
-        'access': str(AccessToken.for_user(user)),
+        'access': str(AccessToken.for_user(user)) if AccessToken else '',
     }
 
 

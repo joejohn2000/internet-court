@@ -1,5 +1,6 @@
 import os
 import sys
+import importlib.util
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -138,9 +139,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -159,6 +158,20 @@ REST_FRAMEWORK = {
         'ai_generate': '6/hour',
     },
 }
+
+try:
+    has_simplejwt = importlib.util.find_spec('rest_framework_simplejwt.authentication') is not None
+except ModuleNotFoundError:
+    has_simplejwt = False
+
+if has_simplejwt:
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append(
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    )
+else:
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append(
+        'rest_framework.authentication.SessionAuthentication'
+    )
 
 from datetime import timedelta
 SIMPLE_JWT = {
