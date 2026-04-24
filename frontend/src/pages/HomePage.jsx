@@ -277,26 +277,14 @@ const HomePage = ({ showToast }) => {
                   exit={{ opacity: 0, x: 24 }}
                   className="xl:pb-6"
                 >
-                  <div className="relative">
-                    <button
-                      onClick={() => {
-                        setSelectedCase(null);
-                        setDetailOffset(0);
-                      }}
-                      className="btn-paper absolute right-4 top-4 z-10 min-h-10 px-3 py-2"
-                      aria-label="Close case detail"
-                    >
-                      <X size={18} />
-                    </button>
-                    <CaseDetail
-                      key={selectedCase.id}
-                      item={selectedCase}
-                      showToast={showToast}
-                      onRefresh={() => {
-                        fetchContent(true);
-                      }}
-                    />
-                  </div>
+
+                  <CaseDetail
+                    key={selectedCase.id}
+                    item={selectedCase}
+                    showToast={showToast}
+                    onRefresh={() => fetchContent(true)}
+                    onClose={() => setSelectedCase(null)}
+                  />
                 </MotionSection>
               </div>
             )}

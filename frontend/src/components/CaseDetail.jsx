@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Scale, Lock, Bot } from 'lucide-react';
-
+import { CheckCircle2, Scale, Lock, Bot, X } from 'lucide-react';
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
 import { useAuth } from '../context/AuthContext';
 
-const CaseDetail = ({ item, showToast, onRefresh }) => {
+const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
   const { user } = useAuth();
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -114,11 +113,23 @@ const CaseDetail = ({ item, showToast, onRefresh }) => {
 
   return (
     <article className="panel-paper overflow-hidden p-4 sm:p-6 lg:p-8">
+
       <div className="flex flex-col gap-3 border-b border-slate-900/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <span className="chip-paper">{item.category?.name || 'Public docket'}</span>
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-          Archive ref #{item.id}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+            Archive ref #{item.id}
+          </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="btn-paper min-h-8 px-2 py-1"
+              aria-label="Close case detail"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <header className="mt-5">
