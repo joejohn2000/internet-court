@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { MessageCircle, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import axios, { API } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -12,7 +16,11 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
     if (!content.trim()) return;
     setSubmitting(true);
     try {
-      await axios.post(`${API}/comments/`, { case: caseId, content });
+      await axios.post(`${API}/comments/`, {
+        case: caseId,
+        content,
+        guest_alias: user?.is_guest ? user.username : '',
+      });
       setContent('');
       showToast('Comment appended to casefile.');
       onRefresh();
@@ -30,6 +38,19 @@ const CommentSection = ({ caseId, comments, showToast, onRefresh }) => {
       </div>
 
       <div className="mt-5 grid gap-4">
+        {user?.is_guest && (
+          <div className="rounded-md border border-amber-400/18 bg-amber-400/8 px-4 py-4 text-sm leading-6 text-slate-700 sm:px-5">
+            You are commenting as <strong>{user.username}</strong>. Claim this identity if you want to keep the same name across devices.
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="mt-3 inline-flex text-sm font-bold uppercase tracking-[0.12em] text-court-accent transition hover:text-court-accent-deep"
+            >
+              Claim this identity
+            </button>
+          </div>
+        )}
+
         {!comments || comments.length === 0 ? (
           <div className="rounded-md border border-dashed border-slate-900/12 bg-slate-900/[0.03] px-4 py-6 text-center text-sm leading-6 text-slate-600 sm:px-6">
             No deliberations yet. Be the first to provide testimony.

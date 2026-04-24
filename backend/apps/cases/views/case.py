@@ -1,6 +1,7 @@
 from rest_framework.decorators import action
 from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
+from django.db.models import Q
 from django.utils import timezone
 from apps.cases.models import Case
 from apps.cases.serializers import CaseSerializer
@@ -14,11 +15,16 @@ class CaseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Case.objects.all().order_by('-created_at')
+        is_admin = self.request.user.is_authenticated and self.request.user.is_staff
         
         # Simple Filtering
         name_filter = self.request.query_params.get('name')
         if name_filter:
-            queryset = queryset.filter(title_hook__icontains=name_filter) | queryset.filter(author__username__icontains=name_filter)
+            queryset = queryset.filter(
+                Q(title_hook__icontains=name_filter)
+                | Q(author__username__icontains=name_filter)
+                | Q(guest_alias__icontains=name_filter)
+            )
             
         category_filter = self.request.query_params.get('category')
         if category_filter:
@@ -36,6 +42,8 @@ class CaseViewSet(viewsets.ModelViewSet):
             else:
                 # If they try to peek at someone else's history, return nothing or error
                 queryset = queryset.none()
+        elif not is_admin:
+            queryset = queryset.filter(is_public=True)
 
         return queryset
 
@@ -58,10 +66,13 @@ class CaseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         ip = get_client_ip(self.request)
         author = None
+        guest_alias = ''
         post_anonymously = str(self.request.data.get('post_anonymously', '')).lower() in {'1', 'true', 'yes', 'on'}
         if self.request.user and self.request.user.is_authenticated and not post_anonymously:
             author = self.request.user
-        serializer.save(author=author, ip_address=ip, status='open')
+        else:
+            guest_alias = str(self.request.data.get('guest_alias', '')).strip()[:64]
+        serializer.save(author=author, guest_alias=guest_alias, ip_address=ip, status='open')
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):

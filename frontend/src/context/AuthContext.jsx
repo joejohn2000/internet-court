@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import axios, { API } from '../lib/api';
-import { getStoredUser, storeUser, clearUser } from '../lib/auth';
+import { getStoredUser, storeUser, clearUser, ensureGuestIdentity } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
@@ -26,12 +26,11 @@ export const AuthProvider = ({ children, showToast }) => {
   }, [navigate]);
 
   const handleGuest = useCallback(() => {
-    localStorage.removeItem('ic_guest_id');
-    const guestUser = { username: 'Spectator', is_guest: true };
+    const guestUser = { username: ensureGuestIdentity(), is_guest: true };
     storeUser(guestUser);
     setUser(guestUser);
     navigate('/home');
-    showToast("Entering Spectator Mode. Voting Enabled (IP-Locked).");
+    showToast(`Temporary identity assigned: ${guestUser.username}.`);
   }, [navigate, showToast]);
 
   // Handle session timeout and auto-refresh

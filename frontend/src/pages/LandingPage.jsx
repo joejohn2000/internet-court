@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Eye } from 'lucide-react';
+import { ArrowRight, Eye, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fadeIn, spring } from '../lib/animations';
@@ -46,30 +46,37 @@ const LandingPage = () => {
               transition={{ delay: 0.3 }}
               className="mx-auto max-w-2xl text-base leading-7 text-slate-300 sm:text-lg lg:mx-0 lg:text-xl"
             >
-              Bring a dispute, let the crowd weigh the evidence, and follow the verdict without fighting the interface.
+              Submit a conflict, let the internet deliberate, and watch the public vote land before the AI ruling unlocks.
             </MotionP>
 
             <MotionDiv
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-col gap-3 sm:flex-row"
+              className="flex flex-col gap-3 sm:flex-row sm:flex-wrap"
             >
               <button
-                id="landing-login"
-                className="btn-primary w-full sm:w-auto sm:min-w-52"
-                onClick={() => navigate('/login')}
-              >
-                <Shield size={20} />
-                <span>Enter Court</span>
-              </button>
-              <button
                 id="landing-guest"
-                className="btn-secondary w-full sm:w-auto sm:min-w-52"
+                className="btn-primary w-full sm:w-auto sm:min-w-52"
                 onClick={handleGuest}
               >
                 <Eye size={20} />
-                <span>Spectate</span>
+                <span>Enter With Temp Identity</span>
+              </button>
+              <button
+                id="landing-login"
+                className="btn-secondary w-full sm:w-auto sm:min-w-52"
+                onClick={() => navigate('/login')}
+              >
+                <Shield size={20} />
+                <span>Claim Identity</span>
+              </button>
+              <button
+                className="inline-flex min-h-12 items-center justify-center gap-2 text-sm font-semibold uppercase tracking-[0.1em] text-amber-200 transition hover:text-amber-100"
+                onClick={() => navigate('/register')}
+              >
+                <span>Create permanent name</span>
+                <ArrowRight size={16} />
               </button>
             </MotionDiv>
           </section>
@@ -90,9 +97,9 @@ const LandingPage = () => {
               </div>
               <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
                 {[
-                  ['Browse dockets', 'Read active cases with clean summaries and live vote data.'],
-                  ['Vote quickly', 'Large verdict actions stay thumb-friendly on smaller screens.'],
-                  ['Track outcomes', 'Check your history and admin work without cramped tables.']
+                  ['Step into the feed', 'Every case enters a public archive with category tags, comments, and a delayed AI ruling.'],
+                  ['Judge before reveal', 'Vote during the debate window, then compare the crowd split after you participate.'],
+                  ['Claim your identity later', 'Start with a temporary alias now and keep it with an account whenever you are ready.']
                 ].map(([title, text]) => (
                   <div key={title} className="rounded-md border border-white/8 bg-black/30 p-4">
                     <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-amber-200">{title}</h2>

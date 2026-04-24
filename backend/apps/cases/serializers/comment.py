@@ -7,13 +7,18 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'case', 'author_name', 'content', 'created_at']
+        fields = ['id', 'case', 'author_name', 'guest_alias', 'content', 'created_at']
         read_only_fields = ['author_name', 'created_at']
 
     def get_author_name(self, obj):
         if obj.author:
             return obj.author.username
+        if obj.guest_alias:
+            return obj.guest_alias
         return 'Anonymous'
+
+    def validate_guest_alias(self, value):
+        return value.strip()[:64]
 
     def validate_content(self, value):
         value = value.strip()

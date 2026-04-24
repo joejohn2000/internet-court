@@ -1,8 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Scale, Lock, Bot, X } from 'lucide-react';
+import { CheckCircle2, Scale, Lock, Bot, Clock3, EyeOff, X } from 'lucide-react';
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
 import { useAuth } from '../context/AuthContext';
+
+const formatTimeRemaining = (seconds) => {
+  const safeSeconds = Math.max(seconds, 0);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+  return `${remainingSeconds}s`;
+};
+
+const formatHashtag = (category) => `#${(category?.slug || category?.name || 'General').replace(/[^a-zA-Z0-9]/g, '')}`;
 
 const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
   const { user } = useAuth();
@@ -87,38 +100,61 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
   const guiltyVotes = item.votes_guilty ?? 0;
   const eshVotes = item.votes_esh ?? 0;
   const notGuiltyVotes = item.votes_not_guilty ?? 0;
+  const nobodyVotes = item.votes_nobody ?? 0;
   const voteData = [
     {
-      label: 'Guilty',
-      key: 'guilty',
+      label: 'You messed up',
+      key: 'you-messed-up',
       votes: guiltyVotes,
       percent: total > 0 ? Math.round((guiltyVotes / total) * 100) : 0,
       barClass: 'bg-rose-600'
     },
     {
-      label: 'Neutral',
-      key: 'neutral',
+      label: 'Both messed up',
+      key: 'both-messed-up',
       votes: eshVotes,
       percent: total > 0 ? Math.round((eshVotes / total) * 100) : 0,
       barClass: 'bg-amber-600'
     },
     {
-      label: 'Not guilty',
-      key: 'not-guilty',
+      label: 'They messed up',
+      key: 'they-messed-up',
       votes: notGuiltyVotes,
       percent: total > 0 ? Math.round((notGuiltyVotes / total) * 100) : 0,
       barClass: 'bg-emerald-600'
+    },
+    {
+      label: 'Nobody messed up',
+      key: 'nobody-messed-up',
+      votes: nobodyVotes,
+      percent: total > 0 ? Math.round((nobodyVotes / total) * 100) : 0,
+      barClass: 'bg-sky-500'
     }
   ];
+
+  const contextBlocks = [
+    ['Your perspective', item.self_perspective],
+    ['Other perspective', item.other_perspective],
+    ['Why you felt right', item.why_right],
+    ['Extra context', item.extra_context],
+  ].filter(([, value]) => value);
 
   return (
     <article className="panel-paper overflow-hidden p-4 sm:p-6 lg:p-8">
 
       <div className="flex flex-col gap-3 border-b border-slate-900/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <span className="chip-paper">{item.category?.name || 'Public docket'}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip-paper">{formatHashtag(item.category)}</span>
+          {!item.is_public && (
+            <span className="chip-paper bg-slate-950 text-white">
+              <EyeOff size={12} />
+              Private archive
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-            Archive ref #{item.id}
+            Case #{item.id}
           </span>
           {onClose && (
             <button
@@ -136,11 +172,33 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
         <h1 className="font-serif text-3xl leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
           {item.title_hook}
         </h1>
+        <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+          <span className="inline-flex items-center gap-2">
+            <Clock3 size={14} />
+            AI reveal {item.can_view_ai_verdict ? 'unlocked' : `in ${formatTimeRemaining(timeRemaining)}`}
+          </span>
+          <span>{item.read_time_minutes} min read</span>
+          <span>{item.author_name || 'Anonymous'} filed this case</span>
+        </div>
       </header>
 
       <section className="mt-6 border-y border-slate-900/10 py-5">
         <p className="text-base leading-8 text-slate-800 sm:text-lg">{item.full_story}</p>
       </section>
+
+      {contextBlocks.length > 0 && (
+        <section className="mt-6 rounded-md border border-slate-900/10 bg-white/60 p-4 sm:p-6">
+          <h2 className="text-lg font-bold uppercase tracking-[0.12em] text-slate-900">Context notes</h2>
+          <div className="mt-4 grid gap-4">
+            {contextBlocks.map(([label, value]) => (
+              <div key={label} className="rounded-md border border-slate-900/8 bg-white/70 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+                <p className="mt-2 text-sm leading-7 text-slate-700 sm:text-base">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-6 rounded-md border border-slate-900/10 bg-white/55 p-4 sm:p-6">
         {hasActuallyVoted ? (
@@ -162,24 +220,31 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
                 className="btn-paper w-full"
-                onClick={() => handleVote('guilty')}
+                onClick={() => handleVote('you_messed_up')}
                 disabled={loading}
               >
-                Guilty
+                You messed up
               </button>
               <button
                 className="btn-paper w-full"
-                onClick={() => handleVote('esh')}
+                onClick={() => handleVote('they_messed_up')}
                 disabled={loading}
               >
-                Neutral
+                They messed up
               </button>
               <button
                 className="btn-paper w-full"
-                onClick={() => handleVote('not_guilty')}
+                onClick={() => handleVote('both_messed_up')}
                 disabled={loading}
               >
-                Not guilty
+                Both messed up
+              </button>
+              <button
+                className="btn-paper w-full sm:col-span-3"
+                onClick={() => handleVote('nobody_messed_up')}
+                disabled={loading}
+              >
+                Nobody messed up
               </button>
             </div>
           </>
@@ -204,7 +269,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {voteData.map(({ key, label, votes, percent }) => (
                   <div key={key} className="rounded-md border border-slate-900/8 bg-white/70 px-4 py-3">
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
@@ -237,7 +302,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
                 The AI Judge is reviewing evidence. Opinion releases in{' '}
-                <strong>{Math.max(timeRemaining, 0)}</strong> seconds.
+                <strong>{formatTimeRemaining(timeRemaining)}</strong>.
               </p>
             </div>
           ) : analysisLoading ? (

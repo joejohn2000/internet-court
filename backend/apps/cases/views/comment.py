@@ -19,6 +19,9 @@ class CommentViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         author = None
+        guest_alias = ''
         if self.request.user and self.request.user.is_authenticated:
             author = self.request.user
-        serializer.save(author=author)
+        else:
+            guest_alias = str(self.request.data.get('guest_alias', '')).strip()[:64]
+        serializer.save(author=author, guest_alias=guest_alias)

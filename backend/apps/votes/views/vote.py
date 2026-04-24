@@ -44,10 +44,17 @@ class VoteViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         case_id = request.data.get('case')
         decision = request.data.get('decision')
+        allowed_decisions = {choice for choice, _label in Vote.VOTE_CHOICES}
 
         if not case_id or not decision:
             return Response(
                 {'error': 'Both case and decision are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if decision not in allowed_decisions:
+            return Response(
+                {'error': 'That verdict option is not valid.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

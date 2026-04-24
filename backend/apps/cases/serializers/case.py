@@ -1,9 +1,15 @@
 from rest_framework import serializers
 from django.utils import timezone
+from math import ceil
 from apps.cases.models import Case, Category
 from .category import CategorySerializer
 from .comment import CommentSerializer
 from core.request import get_client_ip
+
+YOU_MESSED_UP_DECISIONS = ('you_messed_up', 'guilty')
+THEY_MESSED_UP_DECISIONS = ('they_messed_up', 'not_guilty')
+BOTH_MESSED_UP_DECISIONS = ('both_messed_up', 'esh')
+NOBODY_MESSED_UP_DECISIONS = ('nobody_messed_up',)
 
 
 class CaseSerializer(serializers.ModelSerializer):
@@ -14,11 +20,14 @@ class CaseSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField(read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     judge_analysis = serializers.SerializerMethodField()
+    preview_snippet = serializers.SerializerMethodField()
+    read_time_minutes = serializers.SerializerMethodField()
 
     # Vote counts
     votes_guilty = serializers.SerializerMethodField()
     votes_not_guilty = serializers.SerializerMethodField()
     votes_esh = serializers.SerializerMethodField()
+    votes_nobody = serializers.SerializerMethodField()
     total_votes = serializers.SerializerMethodField()
     user_has_voted = serializers.SerializerMethodField()
     can_view_distribution = serializers.SerializerMethodField()
@@ -28,9 +37,11 @@ class CaseSerializer(serializers.ModelSerializer):
         model = Case
         fields = [
             'id', 'author_name', 'category', 'category_id',
-            'title_hook', 'ai_suggested_hook', 'full_story', 'judge_analysis',
+            'title_hook', 'ai_suggested_hook', 'full_story', 'self_perspective',
+            'other_perspective', 'why_right', 'extra_context', 'judge_analysis',
+            'preview_snippet', 'read_time_minutes', 'guest_alias', 'is_public',
             'status', 'verdict_timer_ends', 'created_at',
-            'votes_guilty', 'votes_not_guilty', 'votes_esh', 
+            'votes_guilty', 'votes_not_guilty', 'votes_esh', 'votes_nobody',
             'total_votes', 'user_has_voted', 'can_view_distribution', 'can_view_ai_verdict',
             'comments',
         ]
@@ -46,31 +57,64 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def validate_full_story(self, value):
         value = value.strip()
-        if len(value) < 30:
-            raise serializers.ValidationError('Story must be at least 30 characters long.')
-        if len(value) > 5000:
-            raise serializers.ValidationError('Story must be 5000 characters or fewer.')
+        word_count = len(value.split())
+        if word_count < 100:
+            raise serializers.ValidationError('Story must be at least 100 words long.')
+        if word_count > 1000:
+            raise serializers.ValidationError('Story must be 1000 words or fewer.')
         return value
+
+    def validate_guest_alias(self, value):
+        return value.strip()[:64]
+
+    def validate_self_perspective(self, value):
+        return value.strip()
+
+    def validate_other_perspective(self, value):
+        return value.strip()
+
+    def validate_why_right(self, value):
+        return value.strip()
+
+    def validate_extra_context(self, value):
+        return value.strip()
 
     def get_author_name(self, obj):
         if obj.author:
             return obj.author.username
+        if obj.guest_alias:
+            return obj.guest_alias
         return 'Anonymous'
+
+    def get_preview_snippet(self, obj):
+        text = (obj.full_story or '').strip()
+        if len(text) <= 140:
+            return text
+        return f'{text[:137].rstrip()}...'
+
+    def get_read_time_minutes(self, obj):
+        words = len((obj.full_story or '').split())
+        return max(1, ceil(words / 200))
 
     def get_votes_guilty(self, obj):
         if not self._can_view_distribution(obj):
             return None
-        return obj.votes.filter(decision='guilty').count()
+        return obj.votes.filter(decision__in=YOU_MESSED_UP_DECISIONS).count()
 
     def get_votes_not_guilty(self, obj):
         if not self._can_view_distribution(obj):
             return None
-        return obj.votes.filter(decision='not_guilty').count()
+        return obj.votes.filter(decision__in=THEY_MESSED_UP_DECISIONS).count()
 
     def get_votes_esh(self, obj):
         if not self._can_view_distribution(obj):
             return None
-        return obj.votes.filter(decision='esh').count()
+        return obj.votes.filter(decision__in=BOTH_MESSED_UP_DECISIONS).count()
+
+    def get_votes_nobody(self, obj):
+        if not self._can_view_distribution(obj):
+            return None
+        return obj.votes.filter(decision__in=NOBODY_MESSED_UP_DECISIONS).count()
 
     def get_total_votes(self, obj):
         return obj.votes.count()

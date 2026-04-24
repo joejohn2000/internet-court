@@ -7,6 +7,16 @@ import { useAuth } from '../context/AuthContext';
 import axios, { API } from '../lib/api';
 import { fadeIn } from '../lib/animations';
 
+const decisionLabels = {
+  you_messed_up: 'You messed up',
+  they_messed_up: 'They messed up',
+  both_messed_up: 'Both messed up',
+  nobody_messed_up: 'Nobody messed up',
+  guilty: 'You messed up',
+  not_guilty: 'They messed up',
+  esh: 'Both messed up',
+};
+
 const HistoryPage = ({ showToast }) => {
   const MotionDiv = motion.div;
   const { user } = useAuth();
@@ -68,7 +78,7 @@ const HistoryPage = ({ showToast }) => {
         <section className="mb-6 border-b border-slate-900/10 pb-6">
           <h1 className="font-serif text-3xl text-slate-950 sm:text-4xl">Personal Logs</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Review the cases you filed and the verdicts you submitted without squeezing through a desktop-sized archive.
+            Review your private drafts, public filings, and the judgments you submitted across the archive.
           </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -98,7 +108,7 @@ const HistoryPage = ({ showToast }) => {
               const source = r.type === 'case' ? r : r.case_details;
               const totalVotes = source?.total_votes || 0;
               const guiltyPct = Math.round(((source?.votes_guilty / totalVotes) || 0) * 100);
-              const innocentPct = Math.round(((source?.votes_not_guilty / totalVotes) || 0) * 100);
+              const bothPct = Math.round(((source?.votes_esh / totalVotes) || 0) * 100);
 
               return (
                 <article
@@ -112,7 +122,12 @@ const HistoryPage = ({ showToast }) => {
                       </span>
                       {r.type === 'vote' && (
                         <span className="status-badge-paper bg-slate-950 text-white">
-                          Your verdict: {r.decision.toUpperCase().replace('_', ' ')}
+                          Your verdict: {decisionLabels[r.decision] || r.decision}
+                        </span>
+                      )}
+                      {r.type === 'case' && (
+                        <span className={`status-badge-paper ${source?.is_public ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-950 text-white'}`}>
+                          {source?.is_public ? 'Public' : 'Private'}
                         </span>
                       )}
                     </div>
@@ -132,15 +147,15 @@ const HistoryPage = ({ showToast }) => {
                   <div className="mt-5 grid grid-cols-1 gap-3 rounded-md border border-slate-900/8 bg-slate-900/[0.035] p-4 sm:grid-cols-3">
                     <div>
                       <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-                        Public verdict
+                        You messed up
                       </span>
-                      <p className="mt-2 text-lg font-bold text-slate-900">{guiltyPct}% guilty</p>
+                      <p className="mt-2 text-lg font-bold text-slate-900">{guiltyPct}%</p>
                     </div>
                     <div>
                       <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-                        Censure intensity
+                        Both messed up
                       </span>
-                      <p className="mt-2 text-lg font-bold text-slate-900">{innocentPct}% innocent</p>
+                      <p className="mt-2 text-lg font-bold text-slate-900">{bothPct}%</p>
                     </div>
                     <div>
                       <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">

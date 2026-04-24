@@ -6,9 +6,13 @@ User = get_user_model()
 
 class Vote(models.Model):
     VOTE_CHOICES = [
-        ('guilty', 'Guilty'),
-        ('not_guilty', 'Not Guilty'),
-        ('esh', 'Everyone Sucks Here'),
+        ('you_messed_up', 'You Messed Up'),
+        ('they_messed_up', 'They Messed Up'),
+        ('both_messed_up', 'Both Messed Up'),
+        ('nobody_messed_up', 'Nobody Messed Up'),
+        ('guilty', 'Legacy: You Messed Up'),
+        ('not_guilty', 'Legacy: They Messed Up'),
+        ('esh', 'Legacy: Both Messed Up'),
     ]
 
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='votes')

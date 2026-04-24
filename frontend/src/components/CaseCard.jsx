@@ -2,9 +2,26 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2,
+  Clock3,
   ChevronRight,
+  FileText,
   User
 } from 'lucide-react';
+
+const formatHashtag = (category) => `#${(category?.slug || category?.name || 'General').replace(/[^a-zA-Z0-9]/g, '')}`;
+
+const getTimeUntilVerdict = (verdictEndsAt) => {
+  if (!verdictEndsAt) return 'Verdict pending';
+
+  const diff = new Date(verdictEndsAt).getTime() - Date.now();
+  if (diff <= 0) return 'AI verdict unlocked';
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours > 0) return `AI verdict in ${hours}h ${minutes}m`;
+  return `AI verdict in ${minutes}m`;
+};
 
 const CaseCard = ({ item, isActive, onClick, cardRef }) => {
   const MotionButton = motion.button;
@@ -12,11 +29,13 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
   const guilty = total ? Math.round((item.votes_guilty / total) * 100) : 0;
   const esh = total ? Math.round((item.votes_esh / total) * 100) : 0;
   const notGuilty = total ? Math.round((item.votes_not_guilty / total) * 100) : 0;
+  const nobody = total ? Math.round(((item.votes_nobody ?? 0) / total) * 100) : 0;
 
   const legend = [
-    { label: 'Guilty', percent: guilty, color: 'bg-rose-600', dot: 'bg-rose-500' },
-    { label: 'Neutral', percent: esh, color: 'bg-amber-600', dot: 'bg-amber-500' },
-    { label: 'Not guilty', percent: notGuilty, color: 'bg-emerald-600', dot: 'bg-emerald-500' },
+    { label: 'You messed up', percent: guilty, color: 'bg-rose-600', dot: 'bg-rose-500' },
+    { label: 'Both messed up', percent: esh, color: 'bg-amber-600', dot: 'bg-amber-500' },
+    { label: 'They messed up', percent: notGuilty, color: 'bg-emerald-600', dot: 'bg-emerald-500' },
+    { label: 'Nobody messed up', percent: nobody, color: 'bg-sky-500', dot: 'bg-sky-400' },
   ];
 
   return (
@@ -33,10 +52,13 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
     >
       <header className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">File #{item.id}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Case #{item.id}</p>
           <h2 className="mt-2 font-serif text-xl leading-tight text-white sm:text-2xl">
             {item.title_hook}
           </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+            {item.preview_snippet}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
           {item.user_has_voted && (
@@ -46,10 +68,25 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
             </span>
           )}
           <span className="inline-flex items-center rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-amber-100">
-            {item.category?.name || 'General'}
+            {formatHashtag(item.category)}
           </span>
         </div>
       </header>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 text-xs font-semibold uppercase tracking-[0.1em] text-slate-400 sm:grid-cols-3">
+        <div className="inline-flex items-center gap-2">
+          <Clock3 size={14} className="text-amber-200" />
+          <span>{getTimeUntilVerdict(item.verdict_timer_ends)}</span>
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <FileText size={14} className="text-amber-200" />
+          <span>{item.read_time_minutes} min read</span>
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <span className="text-amber-200">●</span>
+          <span>{total} public votes</span>
+        </div>
+      </div>
 
       <div className="mt-4 space-y-2">
         {/* Segmented bar */}
@@ -88,11 +125,7 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
             <div className="flex gap-x-4">
               <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
                 <span className="inline-block h-2 w-2 rounded-sm bg-slate-600/50" />
-                Guilty
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-                <span className="inline-block h-2 w-2 rounded-sm bg-slate-700/50" />
-                Not guilty
+                Waiting for first votes
               </span>
             </div>
           )}

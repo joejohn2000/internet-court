@@ -9,6 +9,7 @@ User = get_user_model()
 class Comment(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='comments')
+    guest_alias = models.CharField(max_length=64, blank=True, default='')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
