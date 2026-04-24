@@ -82,20 +82,18 @@ import dj_database_url
 
 # Database Configuration
 # ------------------------------------------------------------------------------
-# Local development should stay self-contained by default, even if the repo's
-# .env includes deployment-style DATABASE_URL values.
-is_manage_py_command = Path(sys.argv[0]).name == 'manage.py'
 is_test_command = 'test' in sys.argv
+database_url = os.getenv('DATABASE_URL')
 use_postgres = (
     os.getenv('USE_POSTGRES', 'False') == 'True'
     or os.getenv('RENDER', 'False') == 'True'
-    or (os.getenv('DATABASE_URL') and not is_manage_py_command)
+    or bool(database_url)
 )
 
 if use_postgres:
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL'),
+            default=database_url,
             conn_max_age=600
         )
     }
