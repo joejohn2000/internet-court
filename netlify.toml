@@ -9,8 +9,4 @@
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "same-origin"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://internet-court.onrender.com; frame-ancestors 'none';"
