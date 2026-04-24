@@ -160,9 +160,8 @@ const HomePage = ({ showToast }) => {
             </button>
 
             <div
-              className={`absolute left-4 right-4 top-full mt-3 flex-col gap-3 rounded-md border border-white/10 bg-black/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.38)] md:static md:mt-0 md:flex md:w-auto md:flex-row md:items-center md:gap-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none ${
-                mobileMenuOpen ? 'flex' : 'hidden'
-              }`}
+              className={`absolute left-4 right-4 top-full mt-3 flex-col gap-3 rounded-md border border-white/10 bg-black/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.38)] md:static md:mt-0 md:flex md:w-auto md:flex-row md:items-center md:gap-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none ${mobileMenuOpen ? 'flex' : 'hidden'
+                }`}
             >
               {user && (
                 <button
@@ -199,9 +198,8 @@ const HomePage = ({ showToast }) => {
               </button>
 
               <div
-                className={`chip w-full justify-center md:w-auto ${
-                  user?.is_guest ? 'border-dashed opacity-80' : ''
-                }`}
+                className={`chip w-full justify-center md:w-auto ${user?.is_guest ? 'border-dashed opacity-80' : ''
+                  }`}
               >
                 {user?.is_guest ? <Shield size={16} /> : <UserCheck size={16} />}
                 <span className="truncate">{user?.username || 'Visitor'}</span>
@@ -275,7 +273,7 @@ const HomePage = ({ showToast }) => {
               <div className="order-1 xl:order-2 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
                 <MotionSection
                   initial={{ opacity: 0, x: 32 }}
-                  animate={{ opacity: 1, x: 0, marginTop: detailOffset }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 24 }}
                   className="xl:pb-6"
                 >
