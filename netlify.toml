@@ -15,7 +15,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' data: https://fonts.gstatic.com;
       img-src 'self' data: https: https://*.googlesyndication.com https://*.doubleclick.net;
-      frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com;
+      frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google https://www.google.com;
       connect-src 'self' https://internet-court.onrender.com https://pagead2.googlesyndication.com https://*.adtrafficquality.google;
       object-src 'none';
       base-uri 'none';
