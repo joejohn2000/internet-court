@@ -220,3 +220,4 @@ Temporary Items
 *.swp
 *.swo
 *~
+backend/.env
