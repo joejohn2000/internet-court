@@ -50,7 +50,7 @@ class CaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
-        if self.action in ['request_ai_hook', 'generate_judge_analysis']:
+        if self.action == 'request_ai_hook':
             return [permissions.IsAuthenticated()]
         if self.request.query_params.get('author_id'):
             return [permissions.IsAuthenticated()]
@@ -84,7 +84,7 @@ class CaseViewSet(viewsets.ModelViewSet):
         case.save()
         return Response({'ai_suggested_hook': case.ai_suggested_hook}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='generate_judge_analysis')
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny], url_path='generate_judge_analysis')
     def generate_judge_analysis(self, request, pk=None):
         case = self.get_object()
         force_refresh = bool(request.data.get('refresh', False))

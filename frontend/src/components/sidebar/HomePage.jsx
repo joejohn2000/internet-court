@@ -177,15 +177,9 @@ const HomePage = ({ showToast }) => {
             <CaseListPanel
               loading={loading}
               cases={cases}
-              cats={cats}
               filteredCases={filteredCases}
               selectedCase={selectedCase}
               user={user}
-              activeCategory={activeCategory}
-              setActiveCategory={setActiveCategory}
-              activeSortFilter={activeSortFilter}
-              setActiveSortFilter={setActiveSortFilter}
-              activeFilterCount={activeFilterCount}
               onCaseClick={openCase}
               onSubmitCase={() => openModal('submit')}
               onClearFilters={() => { setActiveCategory(null); setActiveSortFilter('all'); }}

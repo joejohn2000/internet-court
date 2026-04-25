@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Scale, Lock, Bot, Clock3, EyeOff, X } from 'lucide-react';
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
-import { useAuth } from '../context/AuthContext';
 
 const formatTimeRemaining = (seconds) => {
   const safeSeconds = Math.max(seconds, 0);
@@ -18,7 +17,6 @@ const formatTimeRemaining = (seconds) => {
 const formatHashtag = (category) => `#${(category?.slug || category?.name || 'General').replace(/[^a-zA-Z0-9]/g, '')}`;
 
 const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
-  const { user } = useAuth();
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
@@ -59,14 +57,14 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
         const remaining = tick();
         if (remaining === 0) {
           clearInterval(interval);
-          if (user && isUnlockedNow() && !displayedJudgeAnalysis && !analysisLoading && !analysisFailed) {
+          if (isUnlockedNow() && !displayedJudgeAnalysis && !analysisLoading && !analysisFailed) {
             triggerTimer = window.setTimeout(() => {
               triggerJudgeAnalysis();
             }, 0);
           }
         }
       }, 1000);
-    } else if (user && isUnlockedNow() && !displayedJudgeAnalysis && !analysisLoading && !analysisFailed) {
+    } else if (isUnlockedNow() && !displayedJudgeAnalysis && !analysisLoading && !analysisFailed) {
       triggerTimer = window.setTimeout(() => {
         triggerJudgeAnalysis();
       }, 0);
@@ -76,7 +74,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
       if (interval) clearInterval(interval);
       if (triggerTimer) window.clearTimeout(triggerTimer);
     };
-  }, [item.verdict_timer_ends, user, displayedJudgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
+  }, [item.verdict_timer_ends, displayedJudgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
 
   const isUnlockedByTime = Boolean(item.verdict_timer_ends) && timeRemaining === 0;
   const hasActuallyVoted = optimisticVoted || item.user_has_voted;
@@ -313,12 +311,10 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
             <div className="border-l-4 border-slate-900 pl-4 text-base leading-8 whitespace-pre-line text-slate-700">
               {displayedJudgeAnalysis}
             </div>
-          ) : !user ? (
-            <p className="text-sm leading-6 text-slate-600">
-              Sign in to generate the first AI opinion after the debate window ends.
-            </p>
           ) : (
-            <p className="text-sm leading-6 text-slate-600">Analysis failed to load.</p>
+            <p className="text-sm leading-6 text-slate-600">
+              The court is preparing the first public AI opinion. Please check back in a moment.
+            </p>
           )}
         </div>
       </section>
