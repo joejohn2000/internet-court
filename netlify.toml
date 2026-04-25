@@ -9,7 +9,19 @@
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "same-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://internet-court.onrender.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' data: https://fonts.gstatic.com;
+      img-src 'self' data: https: https://*.googlesyndication.com https://*.doubleclick.net;
+      frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com;
+      connect-src 'self' https://internet-court.onrender.com https://pagead2.googlesyndication.com;
+      object-src 'none';
+      base-uri 'none';
+      frame-ancestors 'none';
+    """
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
