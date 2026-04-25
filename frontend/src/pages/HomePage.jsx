@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../context/AuthContext';
 import axios, { API } from '../lib/api';
+import { cleanupAdSenseArtifacts, loadAdSenseScript } from '../lib/adsense';
 import Modal from '../components/Modal';
 
 import Sidebar from '../components/sidebar/Sidebar';
@@ -83,6 +84,26 @@ const HomePage = ({ showToast }) => {
     const timer = window.setTimeout(() => fetchContent(), 0);
     return () => window.clearTimeout(timer);
   }, [fetchContent]);
+
+  useEffect(() => {
+    if (loading || cases.length === 0) {
+      cleanupAdSenseArtifacts();
+      return undefined;
+    }
+
+    let ignore = false;
+
+    loadAdSenseScript().catch(() => {
+      if (!ignore) {
+        cleanupAdSenseArtifacts();
+      }
+    });
+
+    return () => {
+      ignore = true;
+      cleanupAdSenseArtifacts();
+    };
+  }, [loading, cases.length]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
