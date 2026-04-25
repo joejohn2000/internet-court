@@ -209,6 +209,8 @@ SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 
+CASE_VERDICT_DELAY_MINUTES = int(os.getenv('CASE_VERDICT_DELAY_MINUTES', '1'))
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
@@ -38,8 +39,9 @@ class Case(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.verdict_timer_ends:
-            # 12-hour unlock timer logic as seen in wireframe
-            self.verdict_timer_ends = timezone.now() + timedelta(hours=12)
+            self.verdict_timer_ends = timezone.now() + timedelta(
+                minutes=settings.CASE_VERDICT_DELAY_MINUTES
+            )
         super().save(*args, **kwargs)
 
     def __str__(self):

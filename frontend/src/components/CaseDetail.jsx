@@ -279,7 +279,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
             </>
           ) : (
             <p className="text-sm leading-6 text-slate-600">
-              Vote percentages are hidden until you cast a vote or the 12-hour debate window ends.
+              Vote percentages are hidden until you cast a vote or the debate window ends.
             </p>
           )}
         </div>
