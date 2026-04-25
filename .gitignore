@@ -52,14 +52,7 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+
 
 # Django stuff:
 *.log
