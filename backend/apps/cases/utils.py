@@ -1,23 +1,33 @@
 import os
 import google.generativeai as genai
-import random
 
 def get_best_model():
-    """Helper to find the best available Gemini model."""
+    """Return the first working Gemini model, preferring current stable releases."""
+    preferred_model = os.getenv('GEMINI_MODEL')
+    model_names = [
+        preferred_model,
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro-latest',
+    ]
+
     try:
-        # Prioritize flash, then pro variants
-        model_names = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-        for name in model_names:
+        for name in [model_name for model_name in model_names if model_name]:
             try:
                 m = genai.GenerativeModel(name)
-                # Verify access with a zero-token ping
-                m.generate_content("ping", generation_config={"max_output_tokens": 1})
+                m.generate_content(
+                    "ping",
+                    generation_config={"max_output_tokens": 1},
+                )
                 return m
             except:
                 continue
     except:
         pass
-    return genai.GenerativeModel('gemini-1.5-flash')
+
+    fallback_name = preferred_model or 'gemini-2.5-flash'
+    return genai.GenerativeModel(fallback_name)
 
 def generate_ai_analysis(case_id, title, story):
     api_key = os.getenv('GEMINI_API_KEY')
