@@ -1,6 +1,24 @@
 import os
 import google.generativeai as genai
 
+def format_gemini_error(error):
+    message = str(error)
+    lowered = message.lower()
+
+    if 'api key was reported as leaked' in lowered or 'api_key_service_blocked' in lowered:
+        return (
+            "AI Judge temporarily unavailable. The Gemini API key has been disabled "
+            "and must be rotated in the server settings."
+        )
+
+    if 'api key not valid' in lowered or 'permission denied' in lowered:
+        return "AI Judge temporarily unavailable. The Gemini API key is invalid."
+
+    if 'not found for api version' in lowered:
+        return "AI Judge temporarily unavailable. The configured Gemini model is no longer available."
+
+    return f"CRITICAL CORE FAILURE: The Arbiter encountered a logic error. (Error: {message[:80]})"
+
 def get_best_model():
     """Return the first working Gemini model, preferring current stable releases."""
     preferred_model = os.getenv('GEMINI_MODEL')
@@ -56,7 +74,7 @@ def generate_ai_analysis(case_id, title, story):
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        return f"CRITICAL CORE FAILURE: The Arbiter encountered a logic error. (Error: {str(e)[:50]})"
+        return format_gemini_error(e)
 
 def generate_ai_hook(title, story):
     api_key = os.getenv('GEMINI_API_KEY')
@@ -68,5 +86,5 @@ def generate_ai_hook(title, story):
         prompt = f"System: Viral Headline Synthesizer. Task: Refactor '{title}' into a punchy, click-baity Internet Court Hook. Max 10 words."
         response = model.generate_content(prompt)
         return response.text.strip()
-    except:
+    except Exception:
         return f"TRANSMISSION ERROR: {title}"
