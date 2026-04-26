@@ -1,17 +1,11 @@
 // components/layout/CaseListPanel.jsx
-import { useState } from 'react';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { ChevronDown, FileText, Filter, PlusCircle, Tag } from 'lucide-react';
+
+import { LayoutGroup, motion } from 'framer-motion';
+import { FileText, Filter, PlusCircle } from 'lucide-react';
 import CaseCard from '../CaseCard';
 
 const LOADING_CARDS = [1, 2, 3];
 const MotionDiv = motion.div;
-const STATUS_FILTERS = [
-  { value: 'all', label: 'All cases' },
-  { value: 'recent', label: 'Recent' },
-  { value: 'trending', label: 'Trending' },
-  { value: 'resolved', label: 'Resolved' },
-];
 
 const CaseListPanel = ({
   loading,
@@ -30,14 +24,12 @@ const CaseListPanel = ({
   onClearFilters,
   listRef,
 }) => {
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const selectedCategory = cats.find((cat) => cat.id === activeCategory);
+
 
   return (
     <section
-      className={`${
-        selectedCase ? 'order-2 xl:order-1' : 'order-1'
-      } flex flex-col xl:border-r xl:border-white/8 xl:overflow-hidden`}
+      className={`${selectedCase ? 'order-2 xl:order-1' : 'order-1'
+        } flex flex-col xl:border-r xl:border-white/8 xl:overflow-hidden`}
     >
       <div className="shrink-0 border-b border-white/6 bg-[#0a0a0b]/40 px-6 py-5 xl:px-8">
         <div className="flex items-end justify-between gap-4">
@@ -55,131 +47,7 @@ const CaseListPanel = ({
           )}
         </div>
 
-        {!loading && cases.length > 0 && (
-          <div className="mt-4 xl:hidden">
-            <div className="rounded-md border border-white/8 bg-white/[0.03] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                    Docket controls
-                  </p>
-                  <p className="mt-1 text-sm text-slate-200">
-                    {activeFilterCount > 0
-                      ? `${activeFilterCount} filter${activeFilterCount > 1 ? 's' : ''} active`
-                      : 'Browse all open filings'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {filteredCases.length} of {cases.length} cases shown
-                    {selectedCategory ? ` · ${selectedCategory.name}` : ''}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileFiltersOpen((open) => !open)}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-md border border-amber-300/20 bg-amber-300/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-200 transition hover:bg-amber-300/12"
-                  aria-expanded={mobileFiltersOpen}
-                  aria-label={mobileFiltersOpen ? 'Hide docket filters' : 'Show docket filters'}
-                >
-                  <Filter size={14} />
-                  {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-200 ${mobileFiltersOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-              </div>
 
-              <AnimatePresence initial={false}>
-                {mobileFiltersOpen && (
-                  <MotionDiv
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-4 border-t border-white/8 pt-4">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                          Status
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {STATUS_FILTERS.map((option) => {
-                            const isActive = activeSortFilter === option.value;
-                            return (
-                              <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => setActiveSortFilter(option.value)}
-                                className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition ${
-                                  isActive
-                                    ? 'border-amber-300/35 bg-amber-300/14 text-amber-200'
-                                    : 'border-white/8 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
-                                }`}
-                              >
-                                {option.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {cats.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                            Category
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setActiveCategory(null)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition ${
-                                activeCategory == null
-                                  ? 'border-amber-300/35 bg-amber-300/14 text-amber-200'
-                                  : 'border-white/8 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
-                              }`}
-                            >
-                              <Tag size={12} />
-                              All categories
-                            </button>
-                            {cats.map((cat) => {
-                              const isActive = activeCategory === cat.id;
-                              return (
-                                <button
-                                  key={cat.id}
-                                  type="button"
-                                  onClick={() => setActiveCategory(isActive ? null : cat.id)}
-                                  className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition ${
-                                    isActive
-                                      ? 'border-amber-300/35 bg-amber-300/14 text-amber-200'
-                                      : 'border-white/8 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
-                                  }`}
-                                >
-                                  {cat.name}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {activeFilterCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={onClearFilters}
-                          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-200 transition hover:bg-white/[0.08]"
-                        >
-                          <Filter size={13} />
-                          Clear filters
-                        </button>
-                      )}
-                    </div>
-                  </MotionDiv>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        )}
       </div>
 
       <LayoutGroup>

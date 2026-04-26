@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, EyeOff, Globe2, X } from 'lucide-react';
-
+import { createPortal } from 'react-dom';
 import axios, { API } from '../lib/api';
 import { fadeIn, slideUp } from '../lib/animations';
 
@@ -144,11 +144,10 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
     setLoading(false);
   };
 
-  return (
+  return createPortal(
     <MotionDiv
       {...fadeIn}
-      className="fixed inset-0 z-50 flex items-end bg-black/80 p-4 backdrop-blur sm:items-center sm:p-6"
-      onClick={onClose}
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4 backdrop-blur"
     >
       <MotionDiv
         {...slideUp}
@@ -175,13 +174,12 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
             {submitSteps.map((step, index) => (
               <div
                 key={step.id}
-                className={`rounded-md border px-3 py-3 text-left ${
-                  index === submitStep
-                    ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
-                    : index < submitStep
-                      ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
-                      : 'border-white/8 bg-white/[0.03] text-slate-400'
-                }`}
+                className={`rounded-md border px-3 py-3 text-left ${index === submitStep
+                  ? 'border-amber-400/25 bg-amber-400/10 text-amber-100'
+                  : index < submitStep
+                    ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+                    : 'border-white/8 bg-white/[0.03] text-slate-400'
+                  }`}
               >
                 <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em]">Step {index + 1}</p>
                 <p className="mt-1 text-sm font-semibold">{step.label}</p>
@@ -279,11 +277,10 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
                         key={category.id}
                         type="button"
                         onClick={() => updateForm('category', category.slug)}
-                        className={`rounded-md border p-4 text-left transition ${
-                          isActive
-                            ? 'border-amber-400/24 bg-amber-400/10'
-                            : 'border-white/8 bg-white/[0.03] hover:border-white/14 hover:bg-white/[0.05]'
-                        }`}
+                        className={`rounded-md border p-4 text-left transition ${isActive
+                          ? 'border-amber-400/24 bg-amber-400/10'
+                          : 'border-white/8 bg-white/[0.03] hover:border-white/14 hover:bg-white/[0.05]'
+                          }`}
                       >
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-200">{formatHashtag(category)}</p>
                         <p className="mt-2 text-lg font-semibold text-white">{category.name}</p>
@@ -530,7 +527,8 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
           )}
         </form>
       </MotionDiv>
-    </MotionDiv>
+    </MotionDiv>,
+    document.body
   );
 };
 

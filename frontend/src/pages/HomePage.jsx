@@ -155,6 +155,11 @@ const HomePage = ({ showToast }) => {
         setMobileMenuOpen={setMobileMenuOpen}
         selectedCase={selectedCase}
         cases={cases}
+        cats={cats}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        activeSortFilter={activeSortFilter}
+        setActiveSortFilter={setActiveSortFilter}
         onSubmitCase={() => openModal('submit')}
         onFeedback={() => openModal('feedback')}
         onBrowseDocket={handleBrowseDocket}
