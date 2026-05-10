@@ -17,7 +17,7 @@ const Sidebar = ({
   onMouseEnter,
   onMouseLeave,
   user,
-  cases,
+  totalCasesCount,
   cats,
   selectedCase,
   docketOpen,
@@ -105,7 +105,7 @@ const Sidebar = ({
           icon={BookOpen}
           label="Browse Docket"
           isActive={!selectedCase}
-          badge={!collapsed ? (cases.length || undefined) : undefined}
+          badge={!collapsed ? (totalCasesCount || undefined) : undefined}
           onClick={() => {
             if (!collapsed && !selectedCase) {
               setDocketOpen((o) => !o);
@@ -128,7 +128,7 @@ const Sidebar = ({
           activeSortFilter={activeSortFilter}
           setActiveSortFilter={setActiveSortFilter}
           filteredCount={filteredCases.length}
-          totalCount={cases.length}
+          totalCount={totalCasesCount}
         />
 
         <SideLabel collapsed={collapsed}>Support</SideLabel>
@@ -149,7 +149,7 @@ const Sidebar = ({
         />
       </nav>
 
-      <SidebarFooter collapsed={collapsed} caseCount={cases.length} />
+      <SidebarFooter collapsed={collapsed} caseCount={totalCasesCount} />
     </MotionAside>
   );
 };

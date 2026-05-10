@@ -22,7 +22,7 @@ const MobileNav = ({
   mobileMenuOpen,
   setMobileMenuOpen,
   selectedCase,
-  cases,
+  totalCasesCount,
   cats,
   activeCategory,
   setActiveCategory,
@@ -113,7 +113,7 @@ const MobileNav = ({
                       icon={BookOpen}
                       label="Browse Docket"
                       isActive={!selectedCase}
-                      badge={cases.length || undefined}
+                      badge={totalCasesCount || undefined}
                       hasChildren={true}
                       isOpen={docketExpanded}
                       onClick={() => setDocketExpanded((o) => !o)}

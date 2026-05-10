@@ -42,6 +42,7 @@ const AppShell = () => {
 const AppRoutes = ({ showToast }) => {
   const MotionDiv = motion.div;
   const { user } = useAuth();
+  const hasPermanentSession = Boolean(user && !user.is_guest);
   const { beginRouteTransition } = useLoading();
   const location = useLocation();
   const routeKey = `${location.pathname}${location.search}`;
@@ -61,8 +62,8 @@ const AppRoutes = ({ showToast }) => {
         <Routes location={location}>
           {/* Public routes */}
           <Route path="/" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <LandingPage />} />
-          <Route path="/login" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <LoginPage showToast={showToast} />} />
-          <Route path="/register" element={user ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <RegisterPage showToast={showToast} />} />
+          <Route path="/login" element={hasPermanentSession ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <LoginPage showToast={showToast} />} />
+          <Route path="/register" element={hasPermanentSession ? <Navigate to={user.is_admin ? '/admin' : '/home'} replace /> : <RegisterPage showToast={showToast} />} />
 
           {/* Authenticated routes */}
           <Route path="/home" element={!user ? <Navigate to="/" replace /> : <HomePage showToast={showToast} />} />

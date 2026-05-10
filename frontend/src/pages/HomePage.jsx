@@ -13,21 +13,7 @@ import DesktopTopBar from '../components/layout/DesktopTopBar';
 import CaseListPanel from '../components/layout/CaseListPanel';
 import CaseDetailPanel from '../components/layout/CaseDetailPanel';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-const filterCases = (cases, activeCategory, activeSortFilter) =>
-  cases.filter((c) => {
-    const catMatch =
-      activeCategory == null ||
-      c.category === activeCategory ||
-      c.category?.id === activeCategory;
-    const statusMatch =
-      activeSortFilter === 'all' ||
-      (activeSortFilter === 'resolved' && c.is_resolved) ||
-      (activeSortFilter === 'recent' && !c.is_resolved) ||
-      (activeSortFilter === 'trending' && c.vote_count > 5);
-    return catMatch && statusMatch;
-  });
+const normalizeList = (payload) => (Array.isArray(payload) ? payload : payload.results || []);
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -36,6 +22,7 @@ const HomePage = ({ showToast }) => {
 
   // Data
   const [cases, setCases] = useState([]);
+  const [totalCasesCount, setTotalCasesCount] = useState(0);
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,28 +47,56 @@ const HomePage = ({ showToast }) => {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
-  const fetchContent = useCallback(async (syncSelection = false) => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const [cs, ct] = await Promise.all([
+      const response = await axios.get(`${API}/categories/`);
+      setCats(normalizeList(response.data));
+    } catch {
+      // Silent fail
+    }
+  }, []);
+
+  const fetchContent = useCallback(async (syncSelection = false) => {
+    setLoading(true);
+    const filterParams = {};
+
+    if (activeCategory != null) {
+      filterParams.category_id = activeCategory;
+    }
+
+    if (activeSortFilter !== 'all') {
+      filterParams.feed = activeSortFilter;
+    }
+
+    try {
+      const [filteredResponse, totalResponse] = await Promise.all([
+        axios.get(`${API}/cases/`, { params: filterParams }),
         axios.get(`${API}/cases/`),
-        axios.get(`${API}/categories/`),
       ]);
-      const newCases = Array.isArray(cs.data) ? cs.data : cs.data.results || [];
+
+      const newCases = normalizeList(filteredResponse.data);
+      const totalCases = normalizeList(totalResponse.data);
+
       setCases(newCases);
-      setCats(Array.isArray(ct.data) ? ct.data : ct.data.results || []);
+      setTotalCasesCount(totalCases.length);
       if (syncSelection) {
         setSelectedCase((prev) =>
-          prev ? newCases.find((c) => c.id === prev.id) || prev : null
+          prev ? newCases.find((c) => c.id === prev.id) || null : null
         );
       }
     } catch {
       // Silent fail
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [activeCategory, activeSortFilter]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => fetchContent(), 0);
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => fetchContent(true), 0);
     return () => window.clearTimeout(timer);
   }, [fetchContent]);
 
@@ -139,7 +154,7 @@ const HomePage = ({ showToast }) => {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
-  const filteredCases = filterCases(cases, activeCategory, activeSortFilter);
+  const filteredCases = cases;
   const activeFilterCount =
     (activeCategory != null ? 1 : 0) + (activeSortFilter !== 'all' ? 1 : 0);
 
@@ -154,7 +169,7 @@ const HomePage = ({ showToast }) => {
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         selectedCase={selectedCase}
-        cases={cases}
+        totalCasesCount={totalCasesCount}
         cats={cats}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
@@ -172,7 +187,7 @@ const HomePage = ({ showToast }) => {
         onMouseEnter={handleSidebarEnter}
         onMouseLeave={handleSidebarLeave}
         user={user}
-        cases={cases}
+        totalCasesCount={totalCasesCount}
         cats={cats}
         selectedCase={selectedCase}
         docketOpen={docketOpen}
@@ -192,8 +207,8 @@ const HomePage = ({ showToast }) => {
       <div className="flex flex-1 flex-col xl:overflow-hidden">
 
         <DesktopTopBar
-          cases={cases}
-          filteredCases={filteredCases}
+          totalCasesCount={totalCasesCount}
+          filteredCasesCount={filteredCases.length}
           activeFilterCount={activeFilterCount}
         />
 
@@ -203,15 +218,11 @@ const HomePage = ({ showToast }) => {
             <CaseListPanel
               loading={loading}
               cases={cases}
+              totalCasesCount={totalCasesCount}
               cats={cats}
               filteredCases={filteredCases}
               selectedCase={selectedCase}
               user={user}
-              activeCategory={activeCategory}
-              setActiveCategory={setActiveCategory}
-              activeSortFilter={activeSortFilter}
-              setActiveSortFilter={setActiveSortFilter}
-              activeFilterCount={activeFilterCount}
               onCaseClick={openCase}
               onSubmitCase={() => openModal('submit')}
               onClearFilters={() => { setActiveCategory(null); setActiveSortFilter('all'); }}
@@ -231,14 +242,14 @@ const HomePage = ({ showToast }) => {
       {/* Modal */}
       <AnimatePresence>
         {modalType && (
-          <Modal
-            type={modalType}
-            cats={cats}
-            user={user}
-            onClose={() => setModalType(null)}
-            onSuccess={() => { setModalType(null); fetchContent(); }}
-            showToast={showToast}
-          />
+            <Modal
+              type={modalType}
+              cats={cats}
+              user={user}
+              onClose={() => setModalType(null)}
+              onSuccess={() => { setModalType(null); fetchContent(true); }}
+              showToast={showToast}
+            />
         )}
       </AnimatePresence>
     </div>

@@ -10,15 +10,10 @@ const MotionDiv = motion.div;
 const CaseListPanel = ({
   loading,
   cases,
-  cats,
+  totalCasesCount,
   filteredCases,
   selectedCase,
   user,
-  activeCategory,
-  setActiveCategory,
-  activeSortFilter,
-  setActiveSortFilter,
-  activeFilterCount,
   onCaseClick,
   onSubmitCase,
   onClearFilters,
@@ -42,7 +37,7 @@ const CaseListPanel = ({
           {!loading && cases.length > 0 && (
             <span className="shrink-0 rounded-md border border-amber-400/20 bg-amber-400/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
               {filteredCases.length}
-              {filteredCases.length !== cases.length ? ' filtered' : ' unresolved'}
+              {filteredCases.length !== totalCasesCount ? ' filtered' : ' active'}
             </span>
           )}
         </div>
@@ -95,11 +90,11 @@ const CaseListPanel = ({
                   <FileText size={22} className="text-slate-500" />
                 </div>
                 <p className="mt-4 text-sm text-slate-400">
-                  {cases.length === 0
+                  {totalCasesCount === 0
                     ? 'The docket is clear. Submit a case to begin.'
                     : 'No cases match the current filters.'}
                 </p>
-                {cases.length === 0 && user ? (
+                {totalCasesCount === 0 && user ? (
                   <button
                     type="button"
                     onClick={onSubmitCase}
@@ -108,7 +103,7 @@ const CaseListPanel = ({
                     <PlusCircle size={16} />
                     <span>Submit First Case</span>
                   </button>
-                ) : cases.length > 0 ? (
+                ) : totalCasesCount > 0 ? (
                   <button
                     type="button"
                     onClick={onClearFilters}

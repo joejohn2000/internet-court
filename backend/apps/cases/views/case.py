@@ -1,7 +1,7 @@
 from rest_framework.decorators import action
 from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from apps.cases.models import Case
 from apps.cases.serializers import CaseSerializer
@@ -14,7 +14,7 @@ class CaseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Case.objects.all().order_by('-created_at')
+        queryset = Case.objects.all()
         is_admin = self.request.user.is_authenticated and self.request.user.is_staff
         
         # Simple Filtering
@@ -29,6 +29,10 @@ class CaseViewSet(viewsets.ModelViewSet):
         category_filter = self.request.query_params.get('category')
         if category_filter:
             queryset = queryset.filter(category__name__icontains=category_filter)
+
+        category_id_filter = self.request.query_params.get('category_id')
+        if category_id_filter:
+            queryset = queryset.filter(category_id=category_id_filter)
 
         status_filter = self.request.query_params.get('status')
         if status_filter:
@@ -45,7 +49,15 @@ class CaseViewSet(viewsets.ModelViewSet):
         elif not is_admin:
             queryset = queryset.filter(is_public=True)
 
-        return queryset
+        feed_filter = self.request.query_params.get('feed', 'all')
+        if feed_filter == 'recent':
+            return queryset.filter(status='open').order_by('-created_at')
+        if feed_filter == 'resolved':
+            return queryset.filter(status='closed').order_by('-updated_at', '-created_at')
+        if feed_filter == 'trending':
+            return queryset.annotate(vote_total=Count('votes')).order_by('-vote_total', '-created_at')
+
+        return queryset.order_by('-created_at')
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
