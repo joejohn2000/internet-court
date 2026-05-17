@@ -210,6 +210,27 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 
 CASE_VERDICT_DELAY_MINUTES = int(os.getenv('CASE_VERDICT_DELAY_MINUTES', '1'))
+CACHE_CATEGORIES_SECONDS = int(os.getenv('CACHE_CATEGORIES_SECONDS', '1800'))
+CACHE_PUBLIC_CASE_TOTAL_SECONDS = int(os.getenv('CACHE_PUBLIC_CASE_TOTAL_SECONDS', '60'))
+
+redis_url = os.getenv('REDIS_URL')
+if redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': redis_url,
+            'KEY_PREFIX': 'internet_court',
+            'TIMEOUT': 300,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'internet-court-local-cache',
+            'TIMEOUT': 300,
+        }
+    }
 
 LOGGING = {
     'version': 1,

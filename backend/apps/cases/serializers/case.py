@@ -99,24 +99,39 @@ class CaseSerializer(serializers.ModelSerializer):
     def get_votes_guilty(self, obj):
         if not self._can_view_distribution(obj):
             return None
+        annotated_value = getattr(obj, 'votes_guilty_count', None)
+        if annotated_value is not None:
+            return annotated_value
         return obj.votes.filter(decision__in=YOU_MESSED_UP_DECISIONS).count()
 
     def get_votes_not_guilty(self, obj):
         if not self._can_view_distribution(obj):
             return None
+        annotated_value = getattr(obj, 'votes_not_guilty_count', None)
+        if annotated_value is not None:
+            return annotated_value
         return obj.votes.filter(decision__in=THEY_MESSED_UP_DECISIONS).count()
 
     def get_votes_esh(self, obj):
         if not self._can_view_distribution(obj):
             return None
+        annotated_value = getattr(obj, 'votes_esh_count', None)
+        if annotated_value is not None:
+            return annotated_value
         return obj.votes.filter(decision__in=BOTH_MESSED_UP_DECISIONS).count()
 
     def get_votes_nobody(self, obj):
         if not self._can_view_distribution(obj):
             return None
+        annotated_value = getattr(obj, 'votes_nobody_count', None)
+        if annotated_value is not None:
+            return annotated_value
         return obj.votes.filter(decision__in=NOBODY_MESSED_UP_DECISIONS).count()
 
     def get_total_votes(self, obj):
+        annotated_value = getattr(obj, 'total_votes_count', None)
+        if annotated_value is not None:
+            return annotated_value
         return obj.votes.count()
 
     def get_user_has_voted(self, obj):

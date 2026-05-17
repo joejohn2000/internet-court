@@ -69,16 +69,12 @@ const HomePage = ({ showToast }) => {
     }
 
     try {
-      const [filteredResponse, totalResponse] = await Promise.all([
-        axios.get(`${API}/cases/`, { params: filterParams }),
-        axios.get(`${API}/cases/`),
-      ]);
-
-      const newCases = normalizeList(filteredResponse.data);
-      const totalCases = normalizeList(totalResponse.data);
+      const response = await axios.get(`${API}/cases/`, { params: filterParams });
+      const newCases = normalizeList(response.data);
+      const totalCases = response.data?.total_public_count;
 
       setCases(newCases);
-      setTotalCasesCount(totalCases.length);
+      setTotalCasesCount(typeof totalCases === 'number' ? totalCases : newCases.length);
       if (syncSelection) {
         setSelectedCase((prev) =>
           prev ? newCases.find((c) => c.id === prev.id) || null : null

@@ -1,12 +1,22 @@
 from rest_framework.decorators import action
 from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Count, Q
+from django.db.models import Prefetch
 from django.utils import timezone
 from apps.cases.models import Case
+from apps.cases.models.comment import Comment
 from apps.cases.serializers import CaseSerializer
 from core.request import get_client_ip
 from core.throttles import AIGenerationRateThrottle, CaseSubmitRateThrottle
+
+YOU_MESSED_UP_DECISIONS = ('you_messed_up', 'guilty')
+THEY_MESSED_UP_DECISIONS = ('they_messed_up', 'not_guilty')
+BOTH_MESSED_UP_DECISIONS = ('both_messed_up', 'esh')
+NOBODY_MESSED_UP_DECISIONS = ('nobody_messed_up',)
+PUBLIC_CASE_TOTAL_CACHE_KEY = 'cases:public_total:v1'
 
 
 class CaseViewSet(viewsets.ModelViewSet):
@@ -14,7 +24,38 @@ class CaseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Case.objects.all()
+        queryset = (
+            Case.objects.select_related('category', 'author')
+            .prefetch_related(
+                Prefetch(
+                    'comments',
+                    queryset=Comment.objects.select_related('author').order_by('created_at')
+                )
+            )
+            .annotate(
+                total_votes_count=Count('votes', distinct=True),
+                votes_guilty_count=Count(
+                    'votes',
+                    filter=Q(votes__decision__in=YOU_MESSED_UP_DECISIONS),
+                    distinct=True,
+                ),
+                votes_not_guilty_count=Count(
+                    'votes',
+                    filter=Q(votes__decision__in=THEY_MESSED_UP_DECISIONS),
+                    distinct=True,
+                ),
+                votes_esh_count=Count(
+                    'votes',
+                    filter=Q(votes__decision__in=BOTH_MESSED_UP_DECISIONS),
+                    distinct=True,
+                ),
+                votes_nobody_count=Count(
+                    'votes',
+                    filter=Q(votes__decision__in=NOBODY_MESSED_UP_DECISIONS),
+                    distinct=True,
+                ),
+            )
+        )
         is_admin = self.request.user.is_authenticated and self.request.user.is_staff
         
         # Simple Filtering
@@ -59,6 +100,29 @@ class CaseViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by('-created_at')
 
+    def _clear_case_caches(self):
+        cache.delete(PUBLIC_CASE_TOTAL_CACHE_KEY)
+
+    def _get_total_public_count(self):
+        if self.request.query_params.get('author_id'):
+            return None
+
+        is_admin = self.request.user.is_authenticated and self.request.user.is_staff
+        if is_admin:
+            return Case.objects.count()
+
+        cached_total = cache.get(PUBLIC_CASE_TOTAL_CACHE_KEY)
+        if cached_total is not None:
+            return cached_total
+
+        total_public_count = Case.objects.filter(is_public=True).count()
+        cache.set(
+            PUBLIC_CASE_TOTAL_CACHE_KEY,
+            total_public_count,
+            settings.CACHE_PUBLIC_CASE_TOTAL_SECONDS,
+        )
+        return total_public_count
+
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
@@ -85,6 +149,25 @@ class CaseViewSet(viewsets.ModelViewSet):
         else:
             guest_alias = str(self.request.data.get('guest_alias', '')).strip()[:64]
         serializer.save(author=author, guest_alias=guest_alias, ip_address=ip, status='open')
+        self._clear_case_caches()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self._clear_case_caches()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        self._clear_case_caches()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        payload = {
+            'count': queryset.count(),
+            'total_public_count': self._get_total_public_count(),
+            'results': serializer.data,
+        }
+        return Response(payload)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def request_ai_hook(self, request, pk=None):
