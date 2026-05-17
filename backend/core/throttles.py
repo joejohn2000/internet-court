@@ -26,6 +26,10 @@ class LoginRateThrottle(CredentialRateThrottle):
     scope = 'login'
 
 
+class GoogleLoginRateThrottle(IdentRateThrottle):
+    scope = 'google_login'
+
+
 class RegisterRateThrottle(IdentRateThrottle):
     scope = 'register'
 

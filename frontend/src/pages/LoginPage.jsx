@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, X, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,13 +6,19 @@ import { useAuth } from '../context/AuthContext';
 import axios, { API } from '../lib/api';
 import { slideUp } from '../lib/animations';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const GOOGLE_SCRIPT_ID = 'google-identity-services';
+
 const LoginPage = ({ showToast }) => {
   const MotionDiv = motion.div;
   const navigate = useNavigate();
   const { handleAuthSuccess } = useAuth();
+  const googleButtonRef = useRef(null);
   const [form, setForm] = useState({ username: '', password: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(Boolean(GOOGLE_CLIENT_ID));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +31,84 @@ const LoginPage = ({ showToast }) => {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
+
+    const initializeGoogleButton = () => {
+      const google = window.google;
+      if (!google?.accounts?.id || !googleButtonRef.current) {
+        setGoogleLoading(false);
+        return;
+      }
+
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async ({ credential }) => {
+          if (!credential) {
+            showToast('Google sign-in did not return a credential.', 'error');
+            return;
+          }
+
+          setLoading(true);
+          try {
+            const res = await axios.post(`${API}/users/google-login/`, {
+              client_id: GOOGLE_CLIENT_ID,
+              credential,
+            });
+            handleAuthSuccess(res.data, false);
+          } catch (err) {
+            showToast(err.response?.data?.error || 'Google authentication failed.', 'error');
+          }
+          setLoading(false);
+        },
+      });
+
+      googleButtonRef.current.innerHTML = '';
+      google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        type: 'icon',
+        size: 'large',
+        shape: 'circle',
+        logo_alignment: 'center',
+        width: 44,
+      });
+
+      setGoogleReady(true);
+      setGoogleLoading(false);
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogleButton();
+      return undefined;
+    }
+
+    let script = document.getElementById(GOOGLE_SCRIPT_ID);
+    const handleLoad = () => initializeGoogleButton();
+    const handleError = () => {
+      setGoogleLoading(false);
+      showToast('Failed to load Google sign-in.', 'error');
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = GOOGLE_SCRIPT_ID;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.addEventListener('load', handleLoad);
+      script.addEventListener('error', handleError);
+      document.head.appendChild(script);
+    } else {
+      script.addEventListener('load', handleLoad);
+      script.addEventListener('error', handleError);
+    }
+
+    return () => {
+      script?.removeEventListener('load', handleLoad);
+      script?.removeEventListener('error', handleError);
+    };
+  }, [handleAuthSuccess, showToast]);
 
   return (
     <MotionDiv {...slideUp} className="page-shell flex items-center py-8 sm:py-12">
@@ -90,6 +174,32 @@ const LoginPage = ({ showToast }) => {
                 {loading ? 'Processing...' : 'Access Court'}
               </button>
             </form>
+
+            <div className="mt-6 border-t border-slate-900/10 pt-5">
+              <p className="text-center text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Google sign-in
+              </p>
+              {GOOGLE_CLIENT_ID ? (
+                <div className="mt-4 flex flex-col items-center gap-3">
+                  <div ref={googleButtonRef} className="min-h-11" />
+                  <p className="text-center text-sm leading-6 text-slate-500">
+                    Tap the Google icon to sign in instantly.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-4 text-center text-sm leading-6 text-slate-500">
+                  Google sign-in will appear here after `VITE_GOOGLE_CLIENT_ID` is configured.
+                </p>
+              )}
+              {GOOGLE_CLIENT_ID && googleLoading && (
+                <p className="mt-3 text-center text-sm text-slate-500">Loading Google sign-in...</p>
+              )}
+              {GOOGLE_CLIENT_ID && !googleLoading && !googleReady && (
+                <p className="mt-3 text-center text-sm text-slate-500">
+                  Google sign-in is unavailable right now. Please try username and password instead.
+                </p>
+              )}
+            </div>
 
             <p className="mt-6 text-center text-sm leading-6 text-slate-600">
               New to the court?{' '}

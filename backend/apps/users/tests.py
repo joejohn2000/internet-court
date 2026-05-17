@@ -1,7 +1,9 @@
+import os
+
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.test import APITestCase
+from unittest.mock import patch
 
 
 class UserSecurityTests(APITestCase):
@@ -19,8 +21,7 @@ class UserSecurityTests(APITestCase):
         )
 
     def authenticate(self, user):
-        token = AccessToken.for_user(user)
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+        self.client.force_authenticate(user=user)
 
     def test_create_admin_requires_authenticated_admin(self):
         self.authenticate(self.user)
@@ -48,3 +49,51 @@ class UserSecurityTests(APITestCase):
         self.assertGreaterEqual(len(response.data['users']), 2)
         self.assertNotIn('access', response.data['users'][0])
         self.assertNotIn('refresh', response.data['users'][0])
+
+    @patch.dict(os.environ, {'GOOGLE_CLIENT_ID': 'google-client-id.apps.googleusercontent.com'})
+    @patch('apps.users.views.auth.id_token')
+    @patch('apps.users.views.auth.GoogleRequest')
+    def test_google_login_creates_user_from_verified_email(self, google_request_cls, id_token_module):
+        google_request_cls.return_value = object()
+        id_token_module.verify_oauth2_token.return_value = {
+            'iss': 'https://accounts.google.com',
+            'email': 'google-user@example.com',
+            'email_verified': True,
+            'name': 'Google User',
+            'given_name': 'Google',
+            'family_name': 'User',
+        }
+
+        response = self.client.post(
+            '/api/users/google-login/',
+            {
+                'credential': 'signed-google-jwt',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'google-user@example.com')
+        created_user = self.user_model.objects.get(email='google-user@example.com')
+        self.assertFalse(created_user.has_usable_password())
+
+    @patch.dict(os.environ, {'GOOGLE_CLIENT_ID': 'google-client-id.apps.googleusercontent.com'})
+    @patch('apps.users.views.auth.id_token')
+    @patch('apps.users.views.auth.GoogleRequest')
+    def test_google_login_rejects_unverified_email(self, google_request_cls, id_token_module):
+        google_request_cls.return_value = object()
+        id_token_module.verify_oauth2_token.return_value = {
+            'iss': 'https://accounts.google.com',
+            'email': 'unverified@example.com',
+            'email_verified': False,
+        }
+
+        response = self.client.post(
+            '/api/users/google-login/',
+            {
+                'credential': 'signed-google-jwt',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

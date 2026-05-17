@@ -1,7 +1,7 @@
-from .auth import user_register, user_login, user_logout, get_user_response
+from .auth import google_login, user_register, user_login, user_logout, get_user_response
 from .admin import admin_login, create_admin, admin_stats
 
 __all__ = [
-    'user_register', 'user_login', 'user_logout', 'get_user_response',
+    'user_register', 'user_login', 'google_login', 'user_logout', 'get_user_response',
     'admin_login', 'create_admin', 'admin_stats',
 ]

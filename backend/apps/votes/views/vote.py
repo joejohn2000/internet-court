@@ -1,5 +1,6 @@
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
+from apps.cases.cache_utils import bump_public_case_feed_version
 from apps.votes.models import Vote
 from apps.votes.serializers import VoteSerializer
 
@@ -76,5 +77,6 @@ class VoteViewSet(mixins.CreateModelMixin,
             ip_address=ip,
             decision=decision,
         )
+        bump_public_case_feed_version()
         serializer = self.get_serializer(vote)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

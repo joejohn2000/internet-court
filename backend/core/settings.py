@@ -146,6 +146,7 @@ REST_FRAMEWORK = {
         'anon': '120/minute',
         'user': '300/minute',
         'login': '5/minute',
+        'google_login': '8/minute',
         'register': '5/hour',
         'admin_login': '5/minute',
         'create_admin': '10/hour',
@@ -212,6 +213,8 @@ SECURE_HSTS_PRELOAD = not DEBUG
 CASE_VERDICT_DELAY_MINUTES = int(os.getenv('CASE_VERDICT_DELAY_MINUTES', '1'))
 CACHE_CATEGORIES_SECONDS = int(os.getenv('CACHE_CATEGORIES_SECONDS', '1800'))
 CACHE_PUBLIC_CASE_TOTAL_SECONDS = int(os.getenv('CACHE_PUBLIC_CASE_TOTAL_SECONDS', '60'))
+CACHE_PUBLIC_CASE_FEED_SECONDS = int(os.getenv('CACHE_PUBLIC_CASE_FEED_SECONDS', '45'))
+CACHE_GEMINI_MODEL_SECONDS = int(os.getenv('CACHE_GEMINI_MODEL_SECONDS', '3600'))
 
 redis_url = os.getenv('REDIS_URL')
 if redis_url:

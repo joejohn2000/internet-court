@@ -3,10 +3,13 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, Q
-from django.db.models import Prefetch
+from django.db.models import Case as OrderCase, Count, IntegerField, Prefetch, Q, When
 from django.utils import timezone
 from apps.cases.models import Case
+from apps.cases.cache_utils import (
+    build_public_case_feed_cache_key,
+    bump_public_case_feed_version,
+)
 from apps.cases.models.comment import Comment
 from apps.cases.serializers import CaseSerializer
 from core.request import get_client_ip
@@ -102,6 +105,7 @@ class CaseViewSet(viewsets.ModelViewSet):
 
     def _clear_case_caches(self):
         cache.delete(PUBLIC_CASE_TOTAL_CACHE_KEY)
+        bump_public_case_feed_version()
 
     def _get_total_public_count(self):
         if self.request.query_params.get('author_id'):
@@ -161,9 +165,49 @@ class CaseViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        count = None
+
+        is_admin = request.user.is_authenticated and request.user.is_staff
+        name_filter = request.query_params.get('name')
+        author_id = request.query_params.get('author_id')
+        category_filter = request.query_params.get('category')
+        category_id_filter = request.query_params.get('category_id')
+        status_filter = request.query_params.get('status')
+        feed_filter = request.query_params.get('feed', 'all')
+
+        if not is_admin and not name_filter and not author_id:
+            feed_cache_key = build_public_case_feed_cache_key(
+                feed=feed_filter,
+                category_id=category_id_filter,
+                category=category_filter,
+                status=status_filter,
+            )
+            cached_feed = cache.get(feed_cache_key)
+            if cached_feed is not None:
+                case_ids = cached_feed['ids']
+                count = cached_feed['count']
+                if case_ids:
+                    preserved_order = OrderCase(
+                        *[When(id=case_id, then=position) for position, case_id in enumerate(case_ids)],
+                        output_field=IntegerField(),
+                    )
+                    queryset = self.get_queryset().filter(id__in=case_ids).order_by(preserved_order)
+                else:
+                    queryset = self.get_queryset().filter(id__in=[])
+            else:
+                count = queryset.count()
+                case_ids = list(queryset.values_list('id', flat=True))
+                cache.set(
+                    feed_cache_key,
+                    {'ids': case_ids, 'count': count},
+                    settings.CACHE_PUBLIC_CASE_FEED_SECONDS,
+                )
+        if count is None:
+            count = queryset.count()
+
         serializer = self.get_serializer(queryset, many=True)
         payload = {
-            'count': queryset.count(),
+            'count': count,
             'total_public_count': self._get_total_public_count(),
             'results': serializer.data,
         }

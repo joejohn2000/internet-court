@@ -1,5 +1,9 @@
 import os
 import google.generativeai as genai
+from django.conf import settings
+from django.core.cache import cache
+
+GEMINI_MODEL_CACHE_KEY = 'gemini:best_model:v1'
 
 def format_gemini_error(error):
     message = str(error)
@@ -22,6 +26,10 @@ def format_gemini_error(error):
 def get_best_model():
     """Return the first working Gemini model, preferring current stable releases."""
     preferred_model = os.getenv('GEMINI_MODEL')
+    cached_model_name = cache.get(GEMINI_MODEL_CACHE_KEY)
+    if cached_model_name:
+        return genai.GenerativeModel(cached_model_name)
+
     model_names = [
         preferred_model,
         'gemini-2.5-flash',
@@ -38,6 +46,7 @@ def get_best_model():
                     "ping",
                     generation_config={"max_output_tokens": 1},
                 )
+                cache.set(GEMINI_MODEL_CACHE_KEY, name, settings.CACHE_GEMINI_MODEL_SECONDS)
                 return m
             except:
                 continue
@@ -45,6 +54,7 @@ def get_best_model():
         pass
 
     fallback_name = preferred_model or 'gemini-2.5-flash'
+    cache.set(GEMINI_MODEL_CACHE_KEY, fallback_name, settings.CACHE_GEMINI_MODEL_SECONDS)
     return genai.GenerativeModel(fallback_name)
 
 def generate_ai_analysis(case_id, title, story):
