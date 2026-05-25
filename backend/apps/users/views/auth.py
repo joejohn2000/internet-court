@@ -51,13 +51,14 @@ def get_google_client_id():
     return os.getenv('GOOGLE_CLIENT_ID', '').strip()
 
 
-def get_user_response(user):
+def get_user_response(user, profile_image=None):
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'is_admin': user.is_staff or user.is_superuser,
         'access': str(AccessToken.for_user(user)) if AccessToken else '',
+        'profile_image': profile_image or '',
     }
 
 
@@ -172,7 +173,7 @@ def google_login(request):
     except Exception as e:
         print(f"Google history migration failed: {e}")
 
-    return Response(get_user_response(user), status=status.HTTP_200_OK)
+    return Response(get_user_response(user, profile_image=(id_info.get('picture') or '').strip()), status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

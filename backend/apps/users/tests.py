@@ -62,6 +62,7 @@ class UserSecurityTests(APITestCase):
             'name': 'Google User',
             'given_name': 'Google',
             'family_name': 'User',
+            'picture': 'https://lh3.googleusercontent.com/a/test-photo=s96-c',
         }
 
         response = self.client.post(
@@ -74,6 +75,7 @@ class UserSecurityTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], 'google-user@example.com')
+        self.assertEqual(response.data['profile_image'], 'https://lh3.googleusercontent.com/a/test-photo=s96-c')
         created_user = self.user_model.objects.get(email='google-user@example.com')
         self.assertFalse(created_user.has_usable_password())
 
