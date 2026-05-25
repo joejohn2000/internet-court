@@ -4,6 +4,7 @@ import axios, { API } from '../lib/api';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const GOOGLE_SCRIPT_ID = 'google-identity-services';
+const GOOGLE_DEBUG_PREFIX = '[GoogleSignIn]';
 
 const GoogleMark = () => (
   <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
@@ -33,19 +34,43 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
   const originHint = typeof window !== 'undefined' ? window.location.origin : '';
 
   useEffect(() => {
+    console.info(`${GOOGLE_DEBUG_PREFIX} mount`, {
+      origin: originHint || 'unknown',
+      clientId: GOOGLE_CLIENT_ID || 'missing',
+      apiBase: API,
+    });
+
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn(`${GOOGLE_DEBUG_PREFIX} missing client ID`);
+    }
+
     if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
 
     const initializeGoogleButton = () => {
       const google = window.google;
       if (!google?.accounts?.id || !googleButtonRef.current) {
+        console.warn(`${GOOGLE_DEBUG_PREFIX} Google SDK unavailable during init`, {
+          hasGoogle: Boolean(google),
+          hasAccountsId: Boolean(google?.accounts?.id),
+        });
         setGoogleLoading(false);
         return;
       }
 
+      console.info(`${GOOGLE_DEBUG_PREFIX} initializing button`, {
+        origin: originHint || 'unknown',
+        clientId: GOOGLE_CLIENT_ID,
+      });
+
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: async ({ credential }) => {
+          console.info(`${GOOGLE_DEBUG_PREFIX} credential callback`, {
+            hasCredential: Boolean(credential),
+          });
+
           if (!credential) {
+            console.warn(`${GOOGLE_DEBUG_PREFIX} missing credential from Google callback`);
             showToast('Google sign-in did not return a credential.', 'error');
             return;
           }
@@ -53,8 +78,17 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
           setLoading(true);
           try {
             const res = await axios.post(`${API}/users/google-login/`, { credential });
+            console.info(`${GOOGLE_DEBUG_PREFIX} backend login success`, {
+              userId: res.data?.id,
+              role: res.data?.role,
+            });
             handleAuthSuccess(res.data, false);
           } catch (err) {
+            console.error(`${GOOGLE_DEBUG_PREFIX} backend login failed`, {
+              status: err.response?.status,
+              data: err.response?.data,
+              message: err.message,
+            });
             showToast(err.response?.data?.error || 'Google authentication failed.', 'error');
           }
           setLoading(false);
@@ -71,23 +105,32 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
         width: 320,
       });
 
+      console.info(`${GOOGLE_DEBUG_PREFIX} button rendered`);
       setGoogleReady(true);
       setGoogleLoading(false);
     };
 
     if (window.google?.accounts?.id) {
+      console.info(`${GOOGLE_DEBUG_PREFIX} using existing Google SDK instance`);
       initializeGoogleButton();
       return undefined;
     }
 
     let script = document.getElementById(GOOGLE_SCRIPT_ID);
-    const handleLoad = () => initializeGoogleButton();
+    const handleLoad = () => {
+      console.info(`${GOOGLE_DEBUG_PREFIX} Google SDK script loaded`);
+      initializeGoogleButton();
+    };
     const handleError = () => {
+      console.error(`${GOOGLE_DEBUG_PREFIX} failed to load Google SDK script`, {
+        scriptSrc: 'https://accounts.google.com/gsi/client',
+      });
       setGoogleLoading(false);
       showToast('Failed to load Google sign-in.', 'error');
     };
 
     if (!script) {
+      console.info(`${GOOGLE_DEBUG_PREFIX} injecting Google SDK script`);
       script = document.createElement('script');
       script.id = GOOGLE_SCRIPT_ID;
       script.src = 'https://accounts.google.com/gsi/client';
@@ -97,15 +140,17 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
       script.addEventListener('error', handleError);
       document.head.appendChild(script);
     } else {
+      console.info(`${GOOGLE_DEBUG_PREFIX} reusing existing Google SDK script tag`);
       script.addEventListener('load', handleLoad);
       script.addEventListener('error', handleError);
     }
 
     return () => {
+      console.info(`${GOOGLE_DEBUG_PREFIX} cleanup`);
       script?.removeEventListener('load', handleLoad);
       script?.removeEventListener('error', handleError);
     };
-  }, [handleAuthSuccess, setLoading, showToast]);
+  }, [handleAuthSuccess, originHint, setLoading, showToast]);
 
   return (
     <div className="mt-6 border-t border-slate-900/10 pt-5">
@@ -128,12 +173,6 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
           <p className="text-center text-sm leading-6 text-slate-500">
             {helperText || 'Tap the Google icon to sign in instantly.'}
           </p>
-          {originHint ? (
-            <p className="text-center text-xs leading-5 text-slate-400">
-              If Google rejects this sign-in, add <span className="font-semibold text-slate-500">{originHint}</span> to
-              the client&apos;s authorized JavaScript origins.
-            </p>
-          ) : null}
         </div>
       ) : (
         <p className="mt-4 text-center text-sm leading-6 text-slate-500">
@@ -144,9 +183,15 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
         <p className="mt-3 text-center text-sm text-slate-500">Loading Google sign-in...</p>
       )}
       {GOOGLE_CLIENT_ID && !googleLoading && !googleReady && (
-        <p className="mt-3 text-center text-sm text-slate-500">
-          Google sign-in is unavailable right now. Please try username and password instead.
-        </p>
+        <div className="mt-3 space-y-2 text-center text-sm text-slate-500">
+          <p>Google sign-in is unavailable right now. Please try username and password instead.</p>
+          {originHint ? (
+            <p className="text-xs leading-5 text-slate-400">
+              If Google rejects this sign-in, add <span className="font-semibold text-slate-500">{originHint}</span> to
+              the client&apos;s authorized JavaScript origins.
+            </p>
+          ) : null}
+        </div>
       )}
     </div>
   );
