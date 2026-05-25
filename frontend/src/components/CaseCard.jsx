@@ -5,8 +5,8 @@ import {
   Clock3,
   ChevronRight,
   FileText,
-  User
 } from 'lucide-react';
+import CaseAuthorBadge from './CaseAuthorBadge';
 
 const formatHashtag = (category) => `#${(category?.slug || category?.name || 'General').replace(/[^a-zA-Z0-9]/g, '')}`;
 
@@ -134,10 +134,12 @@ const CaseCard = ({ item, isActive, onClick, cardRef }) => {
       </div>
 
       <footer className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/8 pt-4 text-sm text-slate-300">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-amber-400/10 text-amber-200">
-          <User size={15} />
-        </span>
-        <span className="min-w-0 flex-1 truncate">{item.author_name || 'Anonymous'}</span>
+        <CaseAuthorBadge
+          authorName={item.author_name}
+          profileImage={item.author_profile_image}
+          compact
+          className="min-w-0 flex-1"
+        />
         <ChevronRight size={18} className="text-slate-500" />
       </footer>
     </MotionButton>

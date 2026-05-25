@@ -147,12 +147,20 @@ class CaseViewSet(viewsets.ModelViewSet):
         ip = get_client_ip(self.request)
         author = None
         guest_alias = ''
+        author_profile_image = ''
         post_anonymously = str(self.request.data.get('post_anonymously', '')).lower() in {'1', 'true', 'yes', 'on'}
         if self.request.user and self.request.user.is_authenticated and not post_anonymously:
             author = self.request.user
+            author_profile_image = str(self.request.data.get('author_profile_image', '')).strip()[:500]
         else:
             guest_alias = str(self.request.data.get('guest_alias', '')).strip()[:64]
-        serializer.save(author=author, guest_alias=guest_alias, ip_address=ip, status='open')
+        serializer.save(
+            author=author,
+            author_profile_image=author_profile_image,
+            guest_alias=guest_alias,
+            ip_address=ip,
+            status='open',
+        )
         self._clear_case_caches()
 
     def perform_update(self, serializer):

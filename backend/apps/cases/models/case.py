@@ -16,6 +16,7 @@ class Case(models.Model):
     ]
 
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cases', null=True, blank=True)
+    author_profile_image = models.URLField(max_length=500, blank=True, default='')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     ip_address = models.GenericIPAddressField(db_index=True)
     guest_alias = models.CharField(max_length=64, blank=True, default='')

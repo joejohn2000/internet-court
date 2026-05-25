@@ -18,6 +18,7 @@ class CaseSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
     )
     author_name = serializers.SerializerMethodField(read_only=True)
+    author_profile_image = serializers.SerializerMethodField(read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     judge_analysis = serializers.SerializerMethodField()
     preview_snippet = serializers.SerializerMethodField()
@@ -36,7 +37,7 @@ class CaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Case
         fields = [
-            'id', 'author_name', 'category', 'category_id',
+            'id', 'author_name', 'author_profile_image', 'category', 'category_id',
             'title_hook', 'ai_suggested_hook', 'full_story', 'self_perspective',
             'other_perspective', 'why_right', 'extra_context', 'judge_analysis',
             'preview_snippet', 'read_time_minutes', 'guest_alias', 'is_public',
@@ -81,10 +82,16 @@ class CaseSerializer(serializers.ModelSerializer):
 
     def get_author_name(self, obj):
         if obj.author:
-            return obj.author.username
+            full_name = f'{obj.author.first_name} {obj.author.last_name}'.strip()
+            return full_name or obj.author.username
         if obj.guest_alias:
             return obj.guest_alias
         return 'Anonymous'
+
+    def get_author_profile_image(self, obj):
+        if obj.author:
+            return (obj.author_profile_image or '').strip()
+        return ''
 
     def get_preview_snippet(self, obj):
         text = (obj.full_story or '').strip()

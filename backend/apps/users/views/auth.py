@@ -173,7 +173,15 @@ def google_login(request):
     except Exception as e:
         print(f"Google history migration failed: {e}")
 
-    return Response(get_user_response(user, profile_image=(id_info.get('picture') or '').strip()), status=status.HTTP_200_OK)
+    picture = (id_info.get('picture') or '').strip()
+    if picture:
+        try:
+            from apps.cases.models import Case
+            Case.objects.filter(author=user).exclude(author_profile_image=picture).update(author_profile_image=picture)
+        except Exception as e:
+            print(f"Google case profile sync failed: {e}")
+
+    return Response(get_user_response(user, profile_image=picture), status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

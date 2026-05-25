@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Scale, Lock, Bot, Clock3, EyeOff, X } from 'lucide-react';
 import axios, { API } from '../lib/api';
 import CommentSection from './CommentSection';
+import CaseAuthorBadge from './CaseAuthorBadge';
 
 const formatTimeRemaining = (seconds) => {
   const safeSeconds = Math.max(seconds, 0);
@@ -170,6 +171,11 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
         <h1 className="font-serif text-3xl leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
           {item.title_hook}
         </h1>
+        <CaseAuthorBadge
+          authorName={item.author_name}
+          profileImage={item.author_profile_image}
+          className="mt-4"
+        />
         <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
           <span className="inline-flex items-center gap-2">
             <Clock3 size={14} />

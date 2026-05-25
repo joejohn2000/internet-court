@@ -97,6 +97,7 @@ const Modal = ({ type, cats = [], user, onClose, onSuccess, showToast, item }) =
           why_right: form.why_right.trim(),
           extra_context: form.extra_context.trim(),
           guest_alias: user?.is_guest ? user.username : '',
+          author_profile_image: canPostAsSignedInUser ? (user?.profile_image || '') : '',
           is_public: canChooseVisibility ? form.is_public : true,
           post_anonymously: canPostAsSignedInUser ? anon : true,
         };

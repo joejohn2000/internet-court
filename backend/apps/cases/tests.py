@@ -5,6 +5,8 @@ from rest_framework.test import APITestCase
 from apps.cases.models import Case, Category
 from apps.votes.models import Vote
 
+VALID_CASE_STORY = ' '.join(['context'] * 120)
+
 
 class HeaderSpoofingTests(APITestCase):
     def setUp(self):
@@ -27,7 +29,7 @@ class HeaderSpoofingTests(APITestCase):
             {
                 'category_id': self.category.id,
                 'title_hook': 'Another detailed case title',
-                'full_story': 'This story is intentionally long enough to satisfy serializer validation.',
+                'full_story': VALID_CASE_STORY,
             },
             format='json',
             HTTP_X_USER_ID=str(self.user.id),
@@ -51,3 +53,21 @@ class HeaderSpoofingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         vote = Vote.objects.get(pk=response.data['id'])
         self.assertIsNone(vote.voter)
+
+    def test_case_serializer_prefers_author_name_and_profile_image(self):
+        self.user.first_name = 'Joe'
+        self.user.last_name = 'John'
+        self.user.save(update_fields=['first_name', 'last_name'])
+        self.case.author = self.user
+        self.case.author_profile_image = 'https://lh3.googleusercontent.com/a/joe-photo=s96-c'
+        self.case.guest_alias = ''
+        self.case.save(update_fields=['author', 'author_profile_image', 'guest_alias'])
+
+        response = self.client.get('/api/cases/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'][0]['author_name'], 'Joe John')
+        self.assertEqual(
+            response.data['results'][0]['author_profile_image'],
+            'https://lh3.googleusercontent.com/a/joe-photo=s96-c',
+        )
