@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios, { API } from '../lib/api';
 import { slideUp } from '../lib/animations';
+import GoogleSignInPanel from '../components/GoogleSignInPanel';
 
 const RegisterPage = ({ showToast }) => {
   const MotionDiv = motion.div;
@@ -101,6 +102,13 @@ const RegisterPage = ({ showToast }) => {
                 {loading ? 'Processing...' : 'Register for Service'}
               </button>
             </form>
+
+            <GoogleSignInPanel
+              handleAuthSuccess={handleAuthSuccess}
+              showToast={showToast}
+              setLoading={setLoading}
+              helperText="Use the Google icon to join the court without creating a password."
+            />
 
             <p className="mt-6 text-center text-sm leading-6 text-slate-600">
               Already registered?{' '}
