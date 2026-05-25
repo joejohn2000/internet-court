@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - local fallback for incomplete dev envs
 
 from core.request import get_client_ip
 from core.throttles import GoogleLoginRateThrottle, LoginRateThrottle, RegisterRateThrottle
+from apps.users.models import UserProfile
 
 
 def build_unique_username(user_model, raw_username):
@@ -52,13 +53,14 @@ def get_google_client_id():
 
 
 def get_user_response(user, profile_image=None):
+    resolved_profile = getattr(user, 'profile', None)
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'is_admin': user.is_staff or user.is_superuser,
         'access': str(AccessToken.for_user(user)) if AccessToken else '',
-        'profile_image': profile_image or '',
+        'profile_image': profile_image or getattr(resolved_profile, 'profile_image', '') or '',
     }
 
 
@@ -174,6 +176,14 @@ def google_login(request):
         print(f"Google history migration failed: {e}")
 
     picture = (id_info.get('picture') or '').strip()
+    display_name = (id_info.get('name') or f'{user.first_name} {user.last_name}'.strip() or user.username).strip()
+    UserProfile.objects.update_or_create(
+        user=user,
+        defaults={
+            'display_name': display_name[:150],
+            'profile_image': picture[:500],
+        },
+    )
     if picture:
         try:
             from apps.cases.models import Case

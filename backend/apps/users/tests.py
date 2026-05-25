@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import patch
 
+from apps.users.models import UserProfile
+
 
 class UserSecurityTests(APITestCase):
     def setUp(self):
@@ -77,6 +79,9 @@ class UserSecurityTests(APITestCase):
         self.assertEqual(response.data['email'], 'google-user@example.com')
         self.assertEqual(response.data['profile_image'], 'https://lh3.googleusercontent.com/a/test-photo=s96-c')
         created_user = self.user_model.objects.get(email='google-user@example.com')
+        created_profile = UserProfile.objects.get(user=created_user)
+        self.assertEqual(created_profile.display_name, 'Google User')
+        self.assertEqual(created_profile.profile_image, 'https://lh3.googleusercontent.com/a/test-photo=s96-c')
         self.assertFalse(created_user.has_usable_password())
 
     @patch.dict(os.environ, {'GOOGLE_CLIENT_ID': 'google-client-id.apps.googleusercontent.com'})

@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.cases.models import Case, Category
+from apps.users.models import UserProfile
 from apps.votes.models import Vote
 
 VALID_CASE_STORY = ' '.join(['context'] * 120)
@@ -58,15 +59,19 @@ class HeaderSpoofingTests(APITestCase):
         self.user.first_name = 'Joe'
         self.user.last_name = 'John'
         self.user.save(update_fields=['first_name', 'last_name'])
+        UserProfile.objects.create(
+            user=self.user,
+            display_name='Joe',
+            profile_image='https://lh3.googleusercontent.com/a/joe-photo=s96-c',
+        )
         self.case.author = self.user
-        self.case.author_profile_image = 'https://lh3.googleusercontent.com/a/joe-photo=s96-c'
         self.case.guest_alias = ''
-        self.case.save(update_fields=['author', 'author_profile_image', 'guest_alias'])
+        self.case.save(update_fields=['author', 'guest_alias'])
 
         response = self.client.get('/api/cases/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['results'][0]['author_name'], 'Joe John')
+        self.assertEqual(response.data['results'][0]['author_name'], 'Joe')
         self.assertEqual(
             response.data['results'][0]['author_profile_image'],
             'https://lh3.googleusercontent.com/a/joe-photo=s96-c',

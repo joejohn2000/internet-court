@@ -151,7 +151,10 @@ class CaseViewSet(viewsets.ModelViewSet):
         post_anonymously = str(self.request.data.get('post_anonymously', '')).lower() in {'1', 'true', 'yes', 'on'}
         if self.request.user and self.request.user.is_authenticated and not post_anonymously:
             author = self.request.user
-            author_profile_image = str(self.request.data.get('author_profile_image', '')).strip()[:500]
+            author_profile_image = (
+                str(self.request.data.get('author_profile_image', '')).strip()
+                or getattr(getattr(self.request.user, 'profile', None), 'profile_image', '')
+            )[:500]
         else:
             guest_alias = str(self.request.data.get('guest_alias', '')).strip()[:64]
         serializer.save(
