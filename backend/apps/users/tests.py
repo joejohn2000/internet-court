@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import patch
 
+from apps.cases.models import Case, Category, Comment
 from apps.users.models import UserProfile
 
 
@@ -20,6 +21,13 @@ class UserSecurityTests(APITestCase):
             username='citizen',
             email='citizen@example.com',
             password='CitizenPass123!',
+        )
+        self.category = Category.objects.create(name='General', slug='general')
+        self.case = Case.objects.create(
+            category=self.category,
+            title_hook='A detailed case title for testing identity claims',
+            full_story=' '.join(['evidence'] * 120),
+            ip_address='127.0.0.1',
         )
 
     def authenticate(self, user):
@@ -104,3 +112,27 @@ class UserSecurityTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_claims_guest_comment_identity(self):
+        Comment.objects.create(
+            case=self.case,
+            guest_alias='CuriousOtter',
+            content='I left this while browsing as a guest.',
+        )
+
+        response = self.client.post(
+            '/api/users/register/',
+            {
+                'username': 'claimed-juror',
+                'password': 'ClaimedPass123!',
+                'email': 'claimed-juror@example.com',
+                'claimed_guest_alias': 'CuriousOtter',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        claimed_user = self.user_model.objects.get(username='claimed-juror')
+        claimed_comment = Comment.objects.get(case=self.case)
+        self.assertEqual(claimed_comment.author, claimed_user)
+        self.assertEqual(claimed_comment.guest_alias, '')

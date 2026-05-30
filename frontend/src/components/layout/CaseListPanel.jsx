@@ -11,9 +11,13 @@ const CaseListPanel = ({
   loading,
   cases,
   totalCasesCount,
+  filteredCasesCount,
   filteredCases,
   selectedCase,
   user,
+  hasMoreCases,
+  loadingMore,
+  onLoadMore,
   onCaseClick,
   onSubmitCase,
   onClearFilters,
@@ -36,8 +40,8 @@ const CaseListPanel = ({
           </div>
           {!loading && cases.length > 0 && (
             <span className="shrink-0 rounded-md border border-amber-400/20 bg-amber-400/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
-              {filteredCases.length}
-              {filteredCases.length !== totalCasesCount ? ' filtered' : ' active'}
+              {filteredCasesCount}
+              {filteredCasesCount !== totalCasesCount ? ' filtered' : ' active'}
             </span>
           )}
         </div>
@@ -123,6 +127,18 @@ const CaseListPanel = ({
                   onClick={() => onCaseClick(c)}
                 />
               ))
+            )}
+            {!loading && filteredCases.length > 0 && hasMoreCases && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="btn-secondary mx-auto w-full justify-center sm:w-auto"
+                >
+                  <span>{loadingMore ? 'Loading more cases...' : 'Load more cases'}</span>
+                </button>
+              </div>
             )}
           </div>
         </MotionDiv>

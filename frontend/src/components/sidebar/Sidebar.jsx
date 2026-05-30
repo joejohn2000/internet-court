@@ -26,7 +26,7 @@ const Sidebar = ({
   setActiveCategory,
   activeSortFilter,
   setActiveSortFilter,
-  filteredCases,
+  filteredCasesCount,
   onSubmitCase,
   onFeedback,
   onBrowseDocket,
@@ -127,7 +127,7 @@ const Sidebar = ({
           setActiveCategory={setActiveCategory}
           activeSortFilter={activeSortFilter}
           setActiveSortFilter={setActiveSortFilter}
-          filteredCount={filteredCases.length}
+          filteredCount={filteredCasesCount}
           totalCount={totalCasesCount}
         />
 

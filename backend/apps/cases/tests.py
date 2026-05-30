@@ -76,3 +76,17 @@ class HeaderSpoofingTests(APITestCase):
             response.data['results'][0]['author_profile_image'],
             'https://lh3.googleusercontent.com/a/joe-photo=s96-c',
         )
+
+    def test_public_case_feed_uses_lightweight_paginated_payload(self):
+        response = self.client.get('/api/cases/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('count', response.data)
+        self.assertIn('next', response.data)
+        self.assertIn('previous', response.data)
+        self.assertIn('results', response.data)
+        self.assertEqual(response.data['count'], 1)
+        first_case = response.data['results'][0]
+        self.assertNotIn('full_story', first_case)
+        self.assertNotIn('comments', first_case)
+        self.assertEqual(first_case['title_hook'], self.case.title_hook)

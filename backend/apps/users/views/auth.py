@@ -19,9 +19,9 @@ except ImportError:  # pragma: no cover - local fallback for incomplete dev envs
     GoogleRequest = None
     id_token = None
 
+from apps.users.models import UserProfile
 from core.request import get_client_ip
 from core.throttles import GoogleLoginRateThrottle, LoginRateThrottle, RegisterRateThrottle
-from apps.users.models import UserProfile
 
 
 def build_unique_username(user_model, raw_username):
@@ -36,16 +36,19 @@ def build_unique_username(user_model, raw_username):
     return candidate
 
 
-def migrate_anonymous_history(user, request):
+def migrate_claimed_identity(user, request, claimed_guest_alias=''):
     ip = get_client_ip(request)
-    if not ip:
-        return
-
     from apps.cases.models import Case
+    from apps.cases.models.comment import Comment
     from apps.votes.models import Vote
 
-    Case.objects.filter(ip_address=ip, author__isnull=True).update(author=user)
-    Vote.objects.filter(ip_address=ip, voter__isnull=True).update(voter=user)
+    if ip:
+        Case.objects.filter(ip_address=ip, author__isnull=True).update(author=user)
+        Vote.objects.filter(ip_address=ip, voter__isnull=True).update(voter=user)
+
+    if claimed_guest_alias:
+        Case.objects.filter(author__isnull=True, guest_alias=claimed_guest_alias).update(author=user, guest_alias='')
+        Comment.objects.filter(author__isnull=True, guest_alias=claimed_guest_alias).update(author=user, guest_alias='')
 
 
 def get_google_client_id():
@@ -74,6 +77,7 @@ def user_register(request):
     username = request.data.get('username', '').strip()
     password = request.data.get('password', '').strip()
     email = request.data.get('email', '').strip()
+    claimed_guest_alias = request.data.get('claimed_guest_alias', '').strip()[:64]
 
     if not username or not password:
         return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -87,7 +91,7 @@ def user_register(request):
     user = get_user_model().objects.create_user(username=username, password=password, email=email)
     
     try:
-        migrate_anonymous_history(user, request)
+        migrate_claimed_identity(user, request, claimed_guest_alias=claimed_guest_alias)
     except Exception as e:
         print(f"History migration failed: {e}")
 
@@ -102,6 +106,7 @@ def user_login(request):
     """Login for normal users – returns basic user info."""
     username = request.data.get('username', '').strip()
     password = request.data.get('password', '').strip()
+    claimed_guest_alias = request.data.get('claimed_guest_alias', '').strip()[:64]
 
     if not username or not password:
         return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -109,6 +114,11 @@ def user_login(request):
     user = authenticate(request, username=username, password=password)
     if user is None:
         return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        migrate_claimed_identity(user, request, claimed_guest_alias=claimed_guest_alias)
+    except Exception as e:
+        print(f"Login history migration failed: {e}")
 
     return Response(get_user_response(user))
 
@@ -123,6 +133,7 @@ def google_login(request):
         return Response({'error': 'Google sign-in is not available on this server.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     credential = request.data.get('credential', '').strip()
+    claimed_guest_alias = request.data.get('claimed_guest_alias', '').strip()[:64]
     google_client_id = get_google_client_id()
 
     if not google_client_id:
@@ -171,7 +182,7 @@ def google_login(request):
             user.save(update_fields=fields_to_update)
 
     try:
-        migrate_anonymous_history(user, request)
+        migrate_claimed_identity(user, request, claimed_guest_alias=claimed_guest_alias)
     except Exception as e:
         print(f"Google history migration failed: {e}")
 

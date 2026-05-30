@@ -18,30 +18,58 @@ const formatTimeRemaining = (seconds) => {
 const formatHashtag = (category) => `#${(category?.slug || category?.name || 'General').replace(/[^a-zA-Z0-9]/g, '')}`;
 
 const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
+  const [caseData, setCaseData] = useState(item);
   const [optimisticVoted, setOptimisticVoted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [judgeAnalysis, setJudgeAnalysis] = useState(item.judge_analysis || null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisFailed, setAnalysisFailed] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const displayedJudgeAnalysis = judgeAnalysis || item.judge_analysis || null;
+  const displayedJudgeAnalysis = judgeAnalysis || caseData.judge_analysis || null;
+
+  useEffect(() => {
+    const hasFullDetail = typeof item.full_story === 'string' && Array.isArray(item.comments);
+    if (hasFullDetail) {
+      return undefined;
+    }
+
+    let active = true;
+
+    const fetchCaseDetail = async () => {
+      try {
+        const response = await axios.get(`${API}/cases/${item.id}/`);
+        if (!active) return;
+        setCaseData(response.data);
+        setJudgeAnalysis(response.data.judge_analysis || null);
+      } catch {
+        if (active) {
+          showToast('Case details could not be loaded.', 'error');
+        }
+      }
+    };
+
+    fetchCaseDetail();
+    return () => {
+      active = false;
+    };
+  }, [item.id, item.full_story, item.comments, showToast]);
 
   const triggerJudgeAnalysis = useCallback(async () => {
     setAnalysisLoading(true);
     setAnalysisFailed(false);
     try {
-      const res = await axios.post(`${API}/cases/${item.id}/generate_judge_analysis/`);
+      const res = await axios.post(`${API}/cases/${caseData.id}/generate_judge_analysis/`);
       setJudgeAnalysis(res.data.judge_analysis);
       showToast('Judge opinion formulated.');
     } catch {
       setAnalysisFailed(true);
     }
     setAnalysisLoading(false);
-  }, [item.id, showToast]);
+  }, [caseData.id, showToast]);
 
   useEffect(() => {
-    if (!item.verdict_timer_ends) return;
-    const unlockTime = new Date(item.verdict_timer_ends).getTime();
+    if (!caseData.verdict_timer_ends) return;
+    const unlockTime = new Date(caseData.verdict_timer_ends).getTime();
     const isUnlockedNow = () => Date.now() >= unlockTime;
 
     const tick = () => {
@@ -75,12 +103,12 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
       if (interval) clearInterval(interval);
       if (triggerTimer) window.clearTimeout(triggerTimer);
     };
-  }, [item.verdict_timer_ends, displayedJudgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
+  }, [caseData.verdict_timer_ends, displayedJudgeAnalysis, analysisLoading, analysisFailed, triggerJudgeAnalysis]);
 
-  const isUnlockedByTime = Boolean(item.verdict_timer_ends) && timeRemaining === 0;
-  const hasActuallyVoted = optimisticVoted || item.user_has_voted;
-  const canViewDistribution = Boolean(item.can_view_distribution) || optimisticVoted || isUnlockedByTime;
-  const canViewAIVerdict = Boolean(item.can_view_ai_verdict) || isUnlockedByTime;
+  const isUnlockedByTime = Boolean(caseData.verdict_timer_ends) && timeRemaining === 0;
+  const hasActuallyVoted = optimisticVoted || caseData.user_has_voted;
+  const canViewDistribution = Boolean(caseData.can_view_distribution) || optimisticVoted || isUnlockedByTime;
+  const canViewAIVerdict = Boolean(caseData.can_view_ai_verdict) || isUnlockedByTime;
 
   const handleVote = async (decision) => {
     setLoading(true);
@@ -95,11 +123,11 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
     setLoading(false);
   };
 
-  const total = item.total_votes || 0;
-  const guiltyVotes = item.votes_guilty ?? 0;
-  const eshVotes = item.votes_esh ?? 0;
-  const notGuiltyVotes = item.votes_not_guilty ?? 0;
-  const nobodyVotes = item.votes_nobody ?? 0;
+  const total = caseData.total_votes || 0;
+  const guiltyVotes = caseData.votes_guilty ?? 0;
+  const eshVotes = caseData.votes_esh ?? 0;
+  const notGuiltyVotes = caseData.votes_not_guilty ?? 0;
+  const nobodyVotes = caseData.votes_nobody ?? 0;
   const voteData = [
     {
       label: 'You messed up',
@@ -132,10 +160,10 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
   ];
 
   const contextBlocks = [
-    ['Your perspective', item.self_perspective],
-    ['Other perspective', item.other_perspective],
-    ['Why you felt right', item.why_right],
-    ['Extra context', item.extra_context],
+    ['Your perspective', caseData.self_perspective],
+    ['Other perspective', caseData.other_perspective],
+    ['Why you felt right', caseData.why_right],
+    ['Extra context', caseData.extra_context],
   ].filter(([, value]) => value);
 
   return (
@@ -143,8 +171,8 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
 
       <div className="flex flex-col gap-3 border-b border-slate-900/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="chip-paper">{formatHashtag(item.category)}</span>
-          {!item.is_public && (
+          <span className="chip-paper">{formatHashtag(caseData.category)}</span>
+          {!caseData.is_public && (
             <span className="chip-paper bg-slate-950 text-white">
               <EyeOff size={12} />
               Private archive
@@ -153,7 +181,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-            Case #{item.id}
+            Case #{caseData.id}
           </span>
           {onClose && (
             <button
@@ -169,25 +197,25 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
 
       <header className="mt-5">
         <h1 className="font-serif text-3xl leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
-          {item.title_hook}
+          {caseData.title_hook}
         </h1>
         <CaseAuthorBadge
-          authorName={item.author_name}
-          profileImage={item.author_profile_image}
+          authorName={caseData.author_name}
+          profileImage={caseData.author_profile_image}
           className="mt-4"
         />
         <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
           <span className="inline-flex items-center gap-2">
             <Clock3 size={14} />
-            AI reveal {item.can_view_ai_verdict ? 'unlocked' : `in ${formatTimeRemaining(timeRemaining)}`}
+            AI reveal {canViewAIVerdict ? 'unlocked' : `in ${formatTimeRemaining(timeRemaining)}`}
           </span>
-          <span>{item.read_time_minutes} min read</span>
-          <span>{item.author_name || 'Anonymous'} filed this case</span>
+          <span>{caseData.read_time_minutes} min read</span>
+          <span>{caseData.author_name || 'Anonymous'} filed this case</span>
         </div>
       </header>
 
       <section className="mt-6 border-y border-slate-900/10 py-5">
-        <p className="text-base leading-8 text-slate-800 sm:text-lg">{item.full_story}</p>
+        <p className="text-base leading-8 text-slate-800 sm:text-lg">{caseData.full_story}</p>
       </section>
 
       {contextBlocks.length > 0 && (
@@ -327,7 +355,7 @@ const CaseDetail = ({ item, showToast, onRefresh, onClose }) => {
 
       <CommentSection
         caseId={item.id}
-        comments={item.comments}
+        comments={caseData.comments}
         showToast={showToast}
         onRefresh={onRefresh}
       />

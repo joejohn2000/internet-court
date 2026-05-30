@@ -1,10 +1,13 @@
-from rest_framework import serializers
-from django.utils import timezone
 from math import ceil
+
+from django.utils import timezone
+from rest_framework import serializers
+
 from apps.cases.models import Case, Category
+from core.request import get_client_ip
+
 from .category import CategorySerializer
 from .comment import CommentSerializer
-from core.request import get_client_ip
 
 YOU_MESSED_UP_DECISIONS = ('you_messed_up', 'guilty')
 THEY_MESSED_UP_DECISIONS = ('they_messed_up', 'not_guilty')
@@ -12,7 +15,7 @@ BOTH_MESSED_UP_DECISIONS = ('both_messed_up', 'esh')
 NOBODY_MESSED_UP_DECISIONS = ('nobody_messed_up',)
 
 
-class CaseSerializer(serializers.ModelSerializer):
+class BaseCaseSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
@@ -33,20 +36,6 @@ class CaseSerializer(serializers.ModelSerializer):
     user_has_voted = serializers.SerializerMethodField()
     can_view_distribution = serializers.SerializerMethodField()
     can_view_ai_verdict = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Case
-        fields = [
-            'id', 'author_name', 'author_profile_image', 'category', 'category_id',
-            'title_hook', 'ai_suggested_hook', 'full_story', 'self_perspective',
-            'other_perspective', 'why_right', 'extra_context', 'judge_analysis',
-            'preview_snippet', 'read_time_minutes', 'guest_alias', 'is_public',
-            'status', 'verdict_timer_ends', 'created_at',
-            'votes_guilty', 'votes_not_guilty', 'votes_esh', 'votes_nobody',
-            'total_votes', 'user_has_voted', 'can_view_distribution', 'can_view_ai_verdict',
-            'comments',
-        ]
-        read_only_fields = ['verdict_timer_ends', 'ai_suggested_hook', 'judge_analysis']
 
     def validate_title_hook(self, value):
         value = value.strip()
@@ -178,3 +167,35 @@ class CaseSerializer(serializers.ModelSerializer):
         if not request:
             return None
         return get_client_ip(request)
+
+
+class CaseListSerializer(BaseCaseSerializer):
+    class Meta:
+        model = Case
+        fields = [
+            'id', 'author_name', 'author_profile_image', 'category', 'category_id',
+            'title_hook', 'preview_snippet', 'read_time_minutes', 'guest_alias',
+            'is_public', 'status', 'verdict_timer_ends', 'created_at',
+            'votes_guilty', 'votes_not_guilty', 'votes_esh', 'votes_nobody',
+            'total_votes', 'user_has_voted', 'can_view_distribution',
+            'can_view_ai_verdict', 'judge_analysis',
+        ]
+        read_only_fields = ['verdict_timer_ends', 'judge_analysis']
+
+
+class CaseSerializer(BaseCaseSerializer):
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Case
+        fields = [
+            'id', 'author_name', 'author_profile_image', 'category', 'category_id',
+            'title_hook', 'ai_suggested_hook', 'full_story', 'self_perspective',
+            'other_perspective', 'why_right', 'extra_context', 'judge_analysis',
+            'preview_snippet', 'read_time_minutes', 'guest_alias', 'is_public',
+            'status', 'verdict_timer_ends', 'created_at',
+            'votes_guilty', 'votes_not_guilty', 'votes_esh', 'votes_nobody',
+            'total_votes', 'user_has_voted', 'can_view_distribution', 'can_view_ai_verdict',
+            'comments',
+        ]
+        read_only_fields = ['verdict_timer_ends', 'ai_suggested_hook', 'judge_analysis']

@@ -12,7 +12,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_author_name(self, obj):
         if obj.author:
-            return obj.author.username
+            profile = getattr(obj.author, 'profile', None)
+            if profile and profile.display_name:
+                return profile.display_name
+            full_name = f'{obj.author.first_name} {obj.author.last_name}'.strip()
+            return full_name or obj.author.username
         if obj.guest_alias:
             return obj.guest_alias
         return 'Anonymous'

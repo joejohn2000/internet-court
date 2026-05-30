@@ -16,10 +16,10 @@ const CaseDetailPanel = ({ selectedCase, showToast, onRefresh, onClose }) => (
           className="min-h-full"
         >
           <CaseDetail
-            key={selectedCase.id}
+            key={`${selectedCase.id}-${selectedCase.total_votes ?? 0}-${selectedCase.status ?? 'open'}-${selectedCase.can_view_ai_verdict ? 'open' : 'locked'}-${selectedCase.comments?.length ?? 0}-${selectedCase.judge_analysis ? 'analysis' : 'pending'}`}
             item={selectedCase}
             showToast={showToast}
-            onRefresh={onRefresh}
+            onRefresh={() => onRefresh(selectedCase.id)}
             onClose={onClose}
           />
         </MotionSection>

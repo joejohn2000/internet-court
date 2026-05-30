@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import axios, { API } from '../lib/api';
+import { getStoredGuestIdentity } from '../lib/auth';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const GOOGLE_SCRIPT_ID = 'google-identity-services';
@@ -77,7 +78,10 @@ const GoogleSignInPanel = ({ handleAuthSuccess, showToast, setLoading, helperTex
 
           setLoading(true);
           try {
-            const res = await axios.post(`${API}/users/google-login/`, { credential });
+            const res = await axios.post(`${API}/users/google-login/`, {
+              credential,
+              claimed_guest_alias: getStoredGuestIdentity(),
+            });
             console.info(`${GOOGLE_DEBUG_PREFIX} backend login success`, {
               userId: res.data?.id,
               role: res.data?.role,

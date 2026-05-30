@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import axios, { API } from '../lib/api';
 import { slideUp } from '../lib/animations';
 import GoogleSignInPanel from '../components/GoogleSignInPanel';
+import { getStoredGuestIdentity } from '../lib/auth';
 
 const LoginPage = ({ showToast }) => {
   const MotionDiv = motion.div;
@@ -19,7 +20,10 @@ const LoginPage = ({ showToast }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`${API}/users/login/`, form);
+      const res = await axios.post(`${API}/users/login/`, {
+        ...form,
+        claimed_guest_alias: getStoredGuestIdentity(),
+      });
       handleAuthSuccess(res.data, false);
     } catch (err) {
       showToast(err.response?.data?.error || 'Authentication failed.', 'error');

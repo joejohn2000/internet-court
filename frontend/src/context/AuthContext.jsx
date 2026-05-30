@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import axios, { API } from '../lib/api';
-import { getStoredUser, storeUser, clearUser, ensureGuestIdentity } from '../lib/auth';
+import { getStoredUser, storeUser, clearUser, ensureGuestIdentity, clearGuestIdentity } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
@@ -11,6 +11,7 @@ export const AuthProvider = ({ children, showToast }) => {
   const navigate = useNavigate();
 
   const handleAuthSuccess = useCallback((userData, isNew = false) => {
+    clearGuestIdentity();
     storeUser(userData);
     setUser(userData);
     if (isNew) showToast(`Welcome to the Court, ${userData.username}!`);

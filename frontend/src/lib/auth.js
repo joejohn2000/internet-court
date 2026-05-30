@@ -45,3 +45,7 @@ export const clearUser = () => {
   localStorage.removeItem('ic_user');
   localStorage.removeItem('ic_token');
 };
+
+export const clearGuestIdentity = () => {
+  localStorage.removeItem('ic_guest_identity');
+};

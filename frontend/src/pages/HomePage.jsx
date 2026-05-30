@@ -23,8 +23,11 @@ const HomePage = ({ showToast }) => {
   // Data
   const [cases, setCases] = useState([]);
   const [totalCasesCount, setTotalCasesCount] = useState(0);
+  const [filteredCasesCount, setFilteredCasesCount] = useState(0);
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPage, setNextPage] = useState(null);
 
   // Selection / modal
   const [selectedCase, setSelectedCase] = useState(null);
@@ -56,8 +59,12 @@ const HomePage = ({ showToast }) => {
     }
   }, []);
 
-  const fetchContent = useCallback(async (syncSelection = false) => {
-    setLoading(true);
+  const fetchContent = useCallback(async ({ page = 1, syncSelection = false, append = false } = {}) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     const filterParams = {};
 
     if (activeCategory != null) {
@@ -67,14 +74,18 @@ const HomePage = ({ showToast }) => {
     if (activeSortFilter !== 'all') {
       filterParams.feed = activeSortFilter;
     }
+    filterParams.page = page;
 
     try {
       const response = await axios.get(`${API}/cases/`, { params: filterParams });
       const newCases = normalizeList(response.data);
       const totalCases = response.data?.total_public_count;
+      const filteredTotal = response.data?.count;
 
-      setCases(newCases);
+      setCases((current) => (append ? [...current, ...newCases] : newCases));
       setTotalCasesCount(typeof totalCases === 'number' ? totalCases : newCases.length);
+      setFilteredCasesCount(typeof filteredTotal === 'number' ? filteredTotal : newCases.length);
+      setNextPage(response.data?.next || null);
       if (syncSelection) {
         setSelectedCase((prev) =>
           prev ? newCases.find((c) => c.id === prev.id) || null : null
@@ -83,7 +94,11 @@ const HomePage = ({ showToast }) => {
     } catch {
       // Silent fail
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, [activeCategory, activeSortFilter]);
 
@@ -92,7 +107,7 @@ const HomePage = ({ showToast }) => {
   }, [fetchCategories]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => fetchContent(true), 0);
+    const timer = window.setTimeout(() => fetchContent({ syncSelection: true }), 0);
     return () => window.clearTimeout(timer);
   }, [fetchContent]);
 
@@ -148,6 +163,41 @@ const HomePage = ({ showToast }) => {
     hoverLeaveTimer.current = setTimeout(() => setSidebarHovered(false), 120);
   };
 
+  const handleLoadMore = () => {
+    if (!nextPage || loadingMore) return;
+    const nextUrl = new URL(nextPage);
+    const page = Number(nextUrl.searchParams.get('page') || '1');
+    fetchContent({ page, append: true });
+  };
+
+  const refreshSelectedCase = useCallback(async (caseId) => {
+    try {
+      const response = await axios.get(`${API}/cases/${caseId}/`);
+      const detailedCase = response.data;
+      setSelectedCase(detailedCase);
+      setCases((current) => current.map((entry) => (
+        entry.id === detailedCase.id
+          ? {
+            ...entry,
+            votes_guilty: detailedCase.votes_guilty,
+            votes_not_guilty: detailedCase.votes_not_guilty,
+            votes_esh: detailedCase.votes_esh,
+            votes_nobody: detailedCase.votes_nobody,
+            total_votes: detailedCase.total_votes,
+            user_has_voted: detailedCase.user_has_voted,
+            can_view_distribution: detailedCase.can_view_distribution,
+            can_view_ai_verdict: detailedCase.can_view_ai_verdict,
+            judge_analysis: detailedCase.judge_analysis,
+            verdict_timer_ends: detailedCase.verdict_timer_ends,
+            status: detailedCase.status,
+          }
+          : entry
+      )));
+    } catch {
+      showToast('Case details could not be refreshed.', 'error');
+    }
+  }, [showToast]);
+
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const filteredCases = cases;
@@ -192,7 +242,7 @@ const HomePage = ({ showToast }) => {
         setActiveCategory={setActiveCategory}
         activeSortFilter={activeSortFilter}
         setActiveSortFilter={setActiveSortFilter}
-        filteredCases={filteredCases}
+        filteredCasesCount={filteredCasesCount}
         onSubmitCase={() => openModal('submit')}
         onFeedback={() => openModal('feedback')}
         onBrowseDocket={handleBrowseDocket}
@@ -204,7 +254,7 @@ const HomePage = ({ showToast }) => {
 
         <DesktopTopBar
           totalCasesCount={totalCasesCount}
-          filteredCasesCount={filteredCases.length}
+          filteredCasesCount={filteredCasesCount}
           activeFilterCount={activeFilterCount}
         />
 
@@ -215,10 +265,14 @@ const HomePage = ({ showToast }) => {
               loading={loading}
               cases={cases}
               totalCasesCount={totalCasesCount}
+              filteredCasesCount={filteredCasesCount}
               cats={cats}
               filteredCases={filteredCases}
               selectedCase={selectedCase}
               user={user}
+              hasMoreCases={Boolean(nextPage)}
+              loadingMore={loadingMore}
+              onLoadMore={handleLoadMore}
               onCaseClick={openCase}
               onSubmitCase={() => openModal('submit')}
               onClearFilters={() => { setActiveCategory(null); setActiveSortFilter('all'); }}
@@ -228,7 +282,7 @@ const HomePage = ({ showToast }) => {
             <CaseDetailPanel
               selectedCase={selectedCase}
               showToast={showToast}
-              onRefresh={() => fetchContent(true)}
+              onRefresh={refreshSelectedCase}
               onClose={() => setSelectedCase(null)}
             />
           </div>
@@ -243,7 +297,7 @@ const HomePage = ({ showToast }) => {
               cats={cats}
               user={user}
               onClose={() => setModalType(null)}
-              onSuccess={() => { setModalType(null); fetchContent(true); }}
+              onSuccess={() => { setModalType(null); fetchContent({ syncSelection: true }); }}
               showToast={showToast}
             />
         )}

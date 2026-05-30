@@ -1,5 +1,6 @@
 from rest_framework.decorators import action
 from rest_framework import permissions, status, viewsets
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
@@ -11,7 +12,7 @@ from apps.cases.cache_utils import (
     bump_public_case_feed_version,
 )
 from apps.cases.models.comment import Comment
-from apps.cases.serializers import CaseSerializer
+from apps.cases.serializers import CaseListSerializer, CaseSerializer
 from core.request import get_client_ip
 from core.throttles import AIGenerationRateThrottle, CaseSubmitRateThrottle
 
@@ -22,20 +23,31 @@ NOBODY_MESSED_UP_DECISIONS = ('nobody_messed_up',)
 PUBLIC_CASE_TOTAL_CACHE_KEY = 'cases:public_total:v1'
 
 
+class PublicCasePagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 30
+
+
 class CaseViewSet(viewsets.ModelViewSet):
     serializer_class = CaseSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = PublicCasePagination
+
+    def _is_admin_request(self):
+        return self.request.user.is_authenticated and self.request.user.is_staff
+
+    def get_serializer_class(self):
+        if self.action == 'list' and not self.request.query_params.get('author_id') and not self._is_admin_request():
+            return CaseListSerializer
+        return CaseSerializer
+
+    def _should_prefetch_comments(self):
+        return self.action == 'retrieve' or bool(self.request.query_params.get('author_id')) or self._is_admin_request()
 
     def get_queryset(self):
         queryset = (
-            Case.objects.select_related('category', 'author')
-            .prefetch_related(
-                Prefetch(
-                    'comments',
-                    queryset=Comment.objects.select_related('author').order_by('created_at')
-                )
-            )
-            .annotate(
+            Case.objects.select_related('category', 'author').annotate(
                 total_votes_count=Count('votes', distinct=True),
                 votes_guilty_count=Count(
                     'votes',
@@ -59,7 +71,14 @@ class CaseViewSet(viewsets.ModelViewSet):
                 ),
             )
         )
-        is_admin = self.request.user.is_authenticated and self.request.user.is_staff
+        if self._should_prefetch_comments():
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'comments',
+                    queryset=Comment.objects.select_related('author').order_by('created_at')
+                )
+            )
+        is_admin = self._is_admin_request()
         
         # Simple Filtering
         name_filter = self.request.query_params.get('name')
@@ -111,7 +130,7 @@ class CaseViewSet(viewsets.ModelViewSet):
         if self.request.query_params.get('author_id'):
             return None
 
-        is_admin = self.request.user.is_authenticated and self.request.user.is_staff
+        is_admin = self._is_admin_request()
         if is_admin:
             return Case.objects.count()
 
@@ -177,8 +196,9 @@ class CaseViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         count = None
+        paginated = not request.query_params.get('author_id') and not self._is_admin_request()
 
-        is_admin = request.user.is_authenticated and request.user.is_staff
+        is_admin = self._is_admin_request()
         name_filter = request.query_params.get('name')
         author_id = request.query_params.get('author_id')
         category_filter = request.query_params.get('category')
@@ -216,11 +236,23 @@ class CaseViewSet(viewsets.ModelViewSet):
         if count is None:
             count = queryset.count()
 
-        serializer = self.get_serializer(queryset, many=True)
+        if paginated:
+            page = self.paginate_queryset(queryset)
+            serializer = self.get_serializer(page, many=True)
+            results = serializer.data
+            next_link = self.paginator.get_next_link()
+            previous_link = self.paginator.get_previous_link()
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            results = serializer.data
+            next_link = None
+            previous_link = None
         payload = {
             'count': count,
             'total_public_count': self._get_total_public_count(),
-            'results': serializer.data,
+            'next': next_link,
+            'previous': previous_link,
+            'results': results,
         }
         return Response(payload)
 
