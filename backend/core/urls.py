@@ -19,7 +19,14 @@ urlpatterns = [
     path(
         'loaderio-c1662272c97d116ce75d84609b5d965c.txt',
         loaderio_verification,
+        {'token': 'loaderio-c1662272c97d116ce75d84609b5d965c'},
         name='loaderio-verification',
+    ),
+    path(
+        'loaderio-c606583dc7b0df48d25cfa7ef125d863.txt',
+        loaderio_verification,
+        {'token': 'loaderio-c606583dc7b0df48d25cfa7ef125d863'},
+        name='loaderio-verification-render',
     ),
     path('api/users/', include('apps.users.urls')),
     path('api/', include(router.urls)),
